@@ -18,16 +18,29 @@ os.environ["GOOGLE_API_KEY"] = api_key
 # Load Chroma vector store
 def load_vector_store():
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    # Use absolute path to ensure vector store is found
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    persist_dir = os.path.join(current_dir, "chroma_langchain_db")
     db = Chroma(
-        persist_directory="./chroma_langchain_db",
+        persist_directory=persist_dir,
         embedding_function=embeddings,
-        collection_name="rag_collection"
+        collection_name="crime_qa_collection"
     )
     return db
 
 # Build RAG chain
 def build_rag_chain():
-    retriever = load_vector_store().as_retriever(search_type="similarity", search_kwargs={"k": 5})
+    vector_store = load_vector_store()
+    
+    # Add debug logging to check if the vector store has data
+    try:
+        collection = vector_store._collection
+        count = collection.count()
+        logging.info(f"✅ Vector store loaded with {count} documents")
+    except Exception as e:
+        logging.warning(f"Could not get document count: {e}")
+    
+    retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
 
     prompt_template = PromptTemplate(
         input_variables=["context", "question"],

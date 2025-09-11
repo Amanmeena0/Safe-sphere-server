@@ -8,7 +8,7 @@ import time
 import logging
 from random import uniform
 
-# Load environment variables
+
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
@@ -67,11 +67,14 @@ def create_vector_store(chunks):
         raise ValueError("❌ All chunks are empty or whitespace.")
 
     logger.info("🚀 Creating vector store with filtered chunks...")
+    # Use absolute path to ensure consistency
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    persist_dir = os.path.join(current_dir, "chroma_langchain_db")
     vector_store = Chroma.from_texts(
         texts=filtered_chunks,
         embedding=embeddings_model,
-        collection_name="rag_collection",
-        persist_directory="./chroma_langchain_db"
+        collection_name="crime_qa_collection",
+        persist_directory=persist_dir
     )
     vector_store.persist()
     logger.info("✅ Vector store persisted successfully.")
@@ -79,19 +82,34 @@ def create_vector_store(chunks):
 
 
 if __name__ == "__main__":
-    seed_urls = [
-        "https://en.wikipedia.org/wiki/Crime_prevention",
-        "https://en.wikipedia.org/wiki/Crime",
-        "https://dmnewdelhi.delhi.gov.in/helpline/",
-    ]
-
-    full_text = ""
-    for url in seed_urls:
-        text_content = recursive_scrape(url)
-        full_text += text_content
-        with open("scraped_data.txt", "a", encoding="utf-8") as file:
-            file.write(f"Scraped from {url}:\n{text_content}\n\n")
+    # Combine questions and answers for better context
+    questions_file = "./crime_questions.txt"
+    answers_file = "./crime_answers.txt"
+    
+    try:
+        with open(questions_file, "r", encoding="utf-8") as f:
+            questions = f.readlines()
+        with open(answers_file, "r", encoding="utf-8") as f:
+            answers = f.readlines()
         
-    chunks = chunk_text(full_text)
-    create_vector_store(chunks)
-    logger.info("✅ Recursive vector store creation completed.")
+        # Combine questions and answers
+        combined_texts = []
+        for q, a in zip(questions, answers):
+            q = q.strip()
+            a = a.strip()
+            if q and a:
+                # Create Q&A pairs for better retrieval
+                combined_text = f"Question: {q}\nAnswer: {a}"
+                combined_texts.append(combined_text)
+        
+        logger.info(f"✅ Created {len(combined_texts)} Q&A pairs")
+        
+        if combined_texts:
+            chunks = chunk_text("\n\n".join(combined_texts))
+            create_vector_store(chunks)
+            logger.info("✅ Vector store creation from Q&A pairs completed.")
+        else:
+            logger.error("❌ No Q&A pairs created")
+            
+    except Exception as e:
+        logger.error(f"❌ Error processing files: {e}")
