@@ -2,13 +2,6 @@
 
 **Empowering Communities, Ensuring Safety, Inspiring Change**
 
-![License](https://img.shields.io/github/license/username/safe-sphere)
-![Contributors](https://img.shields.io/github/contributors/username/safe-sphere)
-![Issues](https://img.shields.io/github/issues/username/safe-sphere)
-![Pull Requests](https://img.shields.io/github/issues-pr/username/safe-sphere)
-
----
-
 ### Built with the following frameworks and technologies  
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
