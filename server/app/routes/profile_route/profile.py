@@ -5,17 +5,17 @@ from sqlalchemy.exc import SQLAlchemyError
 # Create a Blueprint for profile routes
 profile_bp = Blueprint('profile', __name__)
 
-@profile_bp.route("/api/profile/<clerk_user_id>", methods=['GET'])
-def get_profile(clerk_user_id):
+@profile_bp.route("/api/profile/<auth_id>", methods=['GET'])
+def get_profile(auth_id):
     try:
-        user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+        user = User.query.filter_by(auth_id=auth_id).first()
         
         if not user:
             return jsonify({"error": "User not found"}), 404
 
         user_data = {
             "id": user.id,
-            "clerk_user_id": user.clerk_user_id,
+            "auth_id": user.auth_id,
             "name": user.name,
             "email": user.email,
             "phone": user.phone,
@@ -38,10 +38,10 @@ def get_profile(clerk_user_id):
         return jsonify({"error": "Unexpected error", "details": str(e)}), 500
 
 # ✅ New DELETE endpoint
-@profile_bp.route("/api/profile/<clerk_user_id>", methods=['DELETE'])
-def delete_profile(clerk_user_id):
+@profile_bp.route("/api/profile/<auth_id>", methods=['DELETE'])
+def delete_profile(auth_id):
     try:
-        user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+        user = User.query.filter_by(auth_id=auth_id).first()
 
         if not user:
             return jsonify({"error": "User not found"}), 404

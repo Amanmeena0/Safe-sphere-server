@@ -11,14 +11,14 @@ def register_user():
     try:
         data = request.get_json()
 
-        required_fields = ['name', 'email', 'phone', 'address', 'aadharNumber', 'role', 'dateOfBirth', 'emergencyContact', 'emergencyContactPhone', 'clerkUserId']
+        required_fields = ['name', 'email', 'phone', 'address', 'aadharNumber', 'role', 'dateOfBirth', 'emergencyContact', 'emergencyContactPhone', 'authId']
 
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({'error': f'{field} is required'}), 400
 
-        clerk_user_id = data['clerkUserId']
-        existing_user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+        auth_id = data['authId']
+        existing_user = User.query.filter_by(auth_id=auth_id).first()
         if existing_user:
             return jsonify({'error': 'User already registered'}), 400
 
@@ -38,7 +38,7 @@ def register_user():
             return jsonify({'error': 'Invalid date format for date of birth'}), 400
 
         new_user = User(
-            clerk_user_id=data['clerkUserId'],
+            auth_id=data['authId'],
             name=data['name'],
             email=data['email'],
             phone=data['phone'],
@@ -66,10 +66,10 @@ def register_user():
         print("🔥 ERROR:", e)
         return jsonify({'error': f'Registration failed: {str(e)}'}), 500
 
-@user_bp.route('/profile/check/<clerk_user_id>', methods=['GET'])
-def check_user_profile(clerk_user_id):
+@user_bp.route('/profile/check/<auth_id>', methods=['GET'])
+def check_user_profile(auth_id):
     try:
-        user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+        user = User.query.filter_by(auth_id=auth_id).first()
 
         if user:
             return jsonify({
@@ -93,10 +93,10 @@ def check_user_profile(clerk_user_id):
     except Exception as e:
         return jsonify({'error': f'Failed to check profile: {str(e)}'}), 500
 
-@user_bp.route('/profile/update/<clerk_user_id>', methods=['PUT'])
-def update_user_profile(clerk_user_id):
+@user_bp.route('/profile/update/<auth_id>', methods=['PUT'])
+def update_user_profile(auth_id):
     try:
-        user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+        user = User.query.filter_by(auth_id=auth_id).first()
 
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -120,35 +120,3 @@ def update_user_profile(clerk_user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Update failed: {str(e)}'}), 500
-
-# NEW ROUTE TO UPDATE CLERK METADATA
-@user_bp.route('/profile/update-metadata/<clerk_user_id>', methods=['POST'])
-def update_clerk_metadata(clerk_user_id):
-    try:
-        CLERK_API_KEY = os.environ.get("CLERK_SECRET_KEY")
-        if not CLERK_API_KEY:
-            return jsonify({'error': 'Missing Clerk API Key'}), 500
-
-        data = request.get_json()
-        metadata = {
-            "public_metadata": {
-                "role": data.get("role"),
-                "profileCompleted": True
-            }
-        }
-
-        response = requests.patch(
-            f"https://api.clerk.dev/v1/users/{clerk_user_id}",
-            headers={
-                "Authorization": f"Bearer {CLERK_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json=metadata
-        )
-
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to update metadata"}), 400
-
-        return jsonify({"message": "Metadata updated"}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
