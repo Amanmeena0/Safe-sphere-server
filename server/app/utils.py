@@ -1,23 +1,22 @@
-import mysql.connector
-from app.config import Config
+from app.models import db
+from sqlalchemy import text
 
 def execute_query(query, params=None):
     try:
-        connection = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='MySQLPassword@2004',
-            database='crime'
-        )
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute(query, params)
-        result = cursor.fetchall()
-        return result
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
+        # Use SQLAlchemy session to execute the query
+        # This allows the app to work with SQLite, MySQL, or any other DB configured
+        
+        # Handle parameter placeholder differences between MySQL (%s) and SQLite (?)
+        if 'sqlite' in str(db.engine.url):
+            query = query.replace('%s', '?')
+        
+        # In SQLAlchemy 1.4+, we use text() for raw SQL
+        result = db.session.execute(text(query), params or ())
+        
+        # Convert results to list of dictionaries for JSON serialization
+        if result.returns_rows:
+            return [dict(row) for row in result.mappings()]
         return None
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+    except Exception as e:
+        print(f"Error executing query: {e}")
+        return None
