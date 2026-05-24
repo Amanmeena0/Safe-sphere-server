@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import RecursiveUrlLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 import os
@@ -10,10 +10,9 @@ from random import uniform
 
 
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 if not api_key:
-    raise EnvironmentError("Missing GEMINI_API_KEY in environment.")
-os.environ["GOOGLE_API_KEY"] = api_key
+    raise EnvironmentError("Missing HUGGINGFACEHUB_API_TOKEN in environment.")
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
@@ -54,13 +53,16 @@ def create_vector_store(chunks):
         raise ValueError("No text chunks to embed.")
 
     logger.info(f"🔍 Total chunks to embed: {len(chunks)}")
-    embeddings_model = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    embeddings_model = HuggingFaceInferenceAPIEmbeddings(
+        api_key=api_key,
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
     try:
         test_emb = embeddings_model.embed_query("test")
-        logger.info(f"✅ Gemini Embeddings working. Sample output length: {len(test_emb)}")
+        logger.info(f"✅ HuggingFace Embeddings working. Sample output length: {len(test_emb)}")
     except Exception as e:
-        raise RuntimeError(f"❌ Failed to connect to Gemini Embeddings API: {e}")
+        raise RuntimeError(f"❌ Failed to connect to HuggingFace Embeddings API: {e}")
 
     filtered_chunks = [chunk for chunk in chunks if chunk.strip()]
     if not filtered_chunks:

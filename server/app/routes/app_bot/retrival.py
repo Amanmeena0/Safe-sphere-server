@@ -1,4 +1,5 @@
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_community.llms import HuggingFaceEndpoint
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
@@ -10,14 +11,16 @@ logging.basicConfig(level=logging.INFO)
 
 # Load and validate API Key
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 if not api_key:
-    raise EnvironmentError("Missing GEMINI_API_KEY in environment.")
-os.environ["GOOGLE_API_KEY"] = api_key  
+    raise EnvironmentError("Missing HUGGINGFACEHUB_API_TOKEN in environment.")
 
 # Load Chroma vector store
 def load_vector_store():
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    embeddings = HuggingFaceInferenceAPIEmbeddings(
+        api_key=api_key,
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
     # Use absolute path to ensure vector store is found
     current_dir = os.path.dirname(os.path.abspath(__file__))
     persist_dir = os.path.join(current_dir, "chroma_langchain_db")
@@ -56,9 +59,12 @@ Answer:
 """
     )
 
-    model = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",  # ✅ Use valid available Gemini model
-        temperature=0.2
+    # Use the user-provided model
+    model = HuggingFaceEndpoint(
+        repo_id="mradermacher/Mistral-Nemo-2407-12B-Thinking-Claude-Gemini-GPT5.2-Uncensored-HERETIC-GGUF",
+        huggingfacehub_api_token=api_key,
+        temperature=0.2,
+        max_new_tokens=512
     )
 
     rag_chain = RetrievalQA.from_chain_type(
