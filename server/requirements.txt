@@ -5,8 +5,8 @@ flask-cors
 flask-sqlalchemy
 
 # Database
-mysql-connector-python
 SQLAlchemy
+psycopg2-binary
 
 # Environment & Configuration
 python-dotenv
@@ -29,5 +29,3 @@ pytz
 # Optional: For production server (uncomment as needed)
 # gunicorn==21.2.0
 # python-multipart==0.0.6
-
-pymysql
