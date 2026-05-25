@@ -7,13 +7,33 @@ search_bp = Blueprint('search', __name__)
 @search_bp.route("/search", methods=['GET'])
 @cross_origin()
 def search():
-    state_ut = request.args.get('state_ut', '')
+    state_ut = request.args.get('state_ut')
+    district = request.args.get('district')
+    year = request.args.get('year')
+    limit = request.args.get('limit', 50, type=int)
 
-    query = "SELECT * FROM crime_data WHERE state_ut LIKE %s"
-    params = (f'%{state_ut}%',)
-    data = execute_query(query, params)
+    conditions = []
+    params = {}
 
+    if state_ut:
+        conditions.append("state_ut ILIKE :state_ut")
+        params['state_ut'] = f'%{state_ut}%'
     
+    if district:
+        conditions.append("district ILIKE :district")
+        params['district'] = f'%{district}%'
+    
+    if year:
+        conditions.append("year = :year")
+        params['year'] = year
+
+    query = "SELECT * FROM crime_data"
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    
+    query += f" LIMIT {limit}"
+    
+    data = execute_query(query, params)
     return jsonify(data), 200
 
 
