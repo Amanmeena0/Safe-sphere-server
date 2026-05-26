@@ -6,14 +6,14 @@ from app.models import db
 
 bcrypt = Bcrypt()
 
-
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
     bcrypt.init_app(app)
     db.init_app(app)
-    CORS(app)
+    # Enable CORS for the specific frontend origin
+    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
     from app.routes.search_routes import search_bp
     from app.routes.hello_auth import hello_bp 

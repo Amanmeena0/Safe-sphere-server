@@ -1,8 +1,7 @@
-from flask import Flask, Blueprint, jsonify
+from flask import Blueprint, jsonify
 import json
 import os
 
-app = Flask(__name__)
 crime_data_bp = Blueprint('crime_data_bp', __name__)
 
 @crime_data_bp.route("/api/crime-data", methods=["GET"])
@@ -29,8 +28,3 @@ def get_crime_data():
         }
         records.append(record)
     return jsonify(records)
-
-app.register_blueprint(crime_data_bp)
-
-if __name__ == "__main__":
-    app.run(debug=True)
