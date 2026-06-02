@@ -27,8 +27,7 @@ def create_app():
     # Configure Celery
     celery.conf.update(app.config)
 
-    # Enable CORS
- for the specific frontend origin
+    # Enable CORS for the specific frontend origin
     CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
     from app.routes.search_routes import search_bp
