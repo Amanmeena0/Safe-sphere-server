@@ -7,7 +7,7 @@ import requests
 
 mvtheft_bp = Blueprint('mvtheft', __name__)
 
-@mvtheft_bp.route('api/firs/mv-theft', methods=['POST'])
+@mvtheft_bp.route('/api/firs/mv-theft', methods=['POST'])
 @verify_token
 def report_mv_theft():
     try:

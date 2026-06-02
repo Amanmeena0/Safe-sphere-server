@@ -8,7 +8,7 @@ import requests
 
 missingPerson_bp = Blueprint('missingPerson', __name__)
 
-@missingPerson_bp.route('api/firs/missing_person', methods=['POST'])
+@missingPerson_bp.route('/api/firs/missing_person', methods=['POST'])
 @verify_token
 def report_missing_person():
     try:

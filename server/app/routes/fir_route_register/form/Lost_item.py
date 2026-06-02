@@ -7,7 +7,7 @@ import requests
 
 lost_item_bp = Blueprint('lost_item', __name__)
 
-@lost_item_bp.route('api/firs/lost-item', methods=['POST'])
+@lost_item_bp.route('/api/firs/lost-item', methods=['POST'])
 @verify_token
 def register_lost_item():
     data = request.get_json()

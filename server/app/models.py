@@ -14,7 +14,6 @@ class User(db.Model):
     email = db.Column(db.String(100))
     phone = db.Column(db.String(15))
     address = db.Column(db.String(255))
-    aadhar_number = db.Column(db.String(12), unique=True)
     role = db.Column(db.String(50))
     date_of_birth = db.Column(db.Date)
     emergency_contact_name = db.Column(db.String(100))
