@@ -1,23 +1,26 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, User
 from datetime import datetime
+from app.utils.auth import verify_token
 import os
-import requests
 
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/profile/register', methods=['POST'])
+@verify_token
 def register_user():
     try:
         data = request.get_json()
 
-        required_fields = ['name', 'email', 'phone', 'address', 'aadharNumber', 'role', 'dateOfBirth', 'emergencyContact', 'emergencyContactPhone', 'authId']
+        # authId is now securely extracted from the verified token
+        auth_id = request.user_id
+        
+        required_fields = ['name', 'email', 'phone', 'address', 'aadharNumber', 'role', 'dateOfBirth', 'emergencyContact', 'emergencyContactPhone']
 
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({'error': f'{field} is required'}), 400
 
-        auth_id = data['authId']
         existing_user = User.query.filter_by(auth_id=auth_id).first()
         if existing_user:
             return jsonify({'error': 'User already registered'}), 400
@@ -38,7 +41,7 @@ def register_user():
             return jsonify({'error': 'Invalid date format for date of birth'}), 400
 
         new_user = User(
-            auth_id=data['authId'],
+            auth_id=auth_id,
             name=data['name'],
             email=data['email'],
             phone=data['phone'],
@@ -63,12 +66,14 @@ def register_user():
 
     except Exception as e:
         db.session.rollback()
-        print("🔥 ERROR:", e)
         return jsonify({'error': f'Registration failed: {str(e)}'}), 500
 
-@user_bp.route('/profile/check/<auth_id>', methods=['GET'])
-def check_user_profile(auth_id):
+@user_bp.route('/profile/check', methods=['GET'])
+@verify_token
+def check_user_profile():
     try:
+        # Use the verified auth_id from the token
+        auth_id = request.user_id
         user = User.query.filter_by(auth_id=auth_id).first()
 
         if user:
@@ -93,9 +98,11 @@ def check_user_profile(auth_id):
     except Exception as e:
         return jsonify({'error': f'Failed to check profile: {str(e)}'}), 500
 
-@user_bp.route('/profile/update/<auth_id>', methods=['PUT'])
-def update_user_profile(auth_id):
+@user_bp.route('/profile/update', methods=['PUT'])
+@verify_token
+def update_user_profile():
     try:
+        auth_id = request.user_id
         user = User.query.filter_by(auth_id=auth_id).first()
 
         if not user:

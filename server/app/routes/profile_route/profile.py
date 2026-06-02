@@ -1,13 +1,16 @@
-from flask import Flask, jsonify, Blueprint, request
-from app.models import db, User
+from flask import jsonify, Blueprint, request
+from app.models import db, User, cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft
 from sqlalchemy.exc import SQLAlchemyError
+from app.utils.auth import verify_token
 
 # Create a Blueprint for profile routes
 profile_bp = Blueprint('profile', __name__)
 
-@profile_bp.route("/api/profile/<auth_id>", methods=['GET'])
-def get_profile(auth_id):
+@profile_bp.route("/api/profile", methods=['GET'])
+@verify_token
+def get_profile():
     try:
+        auth_id = request.user_id
         user = User.query.filter_by(auth_id=auth_id).first()
         
         if not user:
@@ -37,10 +40,39 @@ def get_profile(auth_id):
     except Exception as e:
         return jsonify({"error": "Unexpected error", "details": str(e)}), 500
 
-# ✅ New DELETE endpoint
-@profile_bp.route("/api/profile/<auth_id>", methods=['DELETE'])
-def delete_profile(auth_id):
+@profile_bp.route("/api/profile/my-firs", methods=['GET'])
+@verify_token
+def get_my_firs():
+    """
+    Fetch all types of reports submitted by the authenticated citizen.
+    """
     try:
+        auth_id = request.user_id
+        
+        # Helper to serialize model data
+        def serialize(items):
+            return [{c.name: getattr(item, c.name) for c in item.__table__.columns} for item in items]
+
+        data = {
+            "cyber_crimes": serialize(cyberCrime.query.filter_by(user_auth_id=auth_id).all()),
+            "theft_efirs": serialize(theftEfir.query.filter_by(user_auth_id=auth_id).all()),
+            "lost_items": serialize(LostItem.query.filter_by(user_auth_id=auth_id).all()),
+            "missing_persons": serialize(missingPerson.query.filter_by(user_auth_id=auth_id).all()),
+            "domestic_forms": serialize(domesticForm.query.filter_by(user_auth_id=auth_id).all()),
+            "rape_cases": serialize(rapecase.query.filter_by(user_auth_id=auth_id).all()),
+            "mv_thefts": serialize(mvTheft.query.filter_by(user_auth_id=auth_id).all())
+        }
+
+        return jsonify(data), 200
+
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch reports", "details": str(e)}), 500
+
+@profile_bp.route("/api/profile", methods=['DELETE'])
+@verify_token
+def delete_profile():
+    try:
+        auth_id = request.user_id
         user = User.query.filter_by(auth_id=auth_id).first()
 
         if not user:

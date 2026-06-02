@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, cyberCrime
 from datetime import datetime
+from app.utils.auth import verify_token
 import os
 
 cyber_crime_bp = Blueprint('cyber_crime', __name__)
 
 @cyber_crime_bp.route('/fir-register/cyber-crime/', methods=['POST'])
+@verify_token
 def register_cyber_crime():
     data = request.get_json()
 
@@ -24,6 +26,7 @@ def register_cyber_crime():
         return jsonify({'error': 'Invalid date format for date of incident'}), 400
 
     new_cyber_crime = cyberCrime(
+        user_auth_id=request.user_id,
         crimeCategory=data['incidentType'],
         platform = data['platefrom'],
         date_of_incident = data['dateOfIncident'],

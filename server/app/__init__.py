@@ -1,8 +1,19 @@
+import logging
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from app.config import Config
 from app.models import db
+from app.utils.celery_app import celery
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
 
 bcrypt = Bcrypt()
 
@@ -12,7 +23,12 @@ def create_app():
 
     bcrypt.init_app(app)
     db.init_app(app)
-    # Enable CORS for the specific frontend origin
+
+    # Configure Celery
+    celery.conf.update(app.config)
+
+    # Enable CORS
+ for the specific frontend origin
     CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
     from app.routes.search_routes import search_bp
@@ -48,6 +64,18 @@ def create_app():
     app.register_blueprint(rapecase_bp)
     app.register_blueprint(theft_bp)
     app.register_blueprint(mvtheft_bp)
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return {"error": "Bad Request", "message": str(error)}, 400
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return {"error": "Not Found", "message": "The requested resource was not found"}, 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        return {"error": "Internal Server Error", "message": "An unexpected error occurred"}, 500
 
     # Create tables
     with app.app_context():

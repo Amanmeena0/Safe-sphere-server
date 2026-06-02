@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, domesticForm
+from app.utils.auth import verify_token
 import os
 from datetime import datetime
 
 domestic_bp = Blueprint('domestic', __name__)
 @domestic_bp.route('/fir-register/domestic/', methods=['POST'])
+@verify_token
 def register_domestic():
     data = request.get_json()
 
@@ -20,6 +22,7 @@ def register_domestic():
         return jsonify({'error': 'Invalid date format for date of incident'}), 400
 
     new_domestic = domesticForm(
+        user_auth_id=request.user_id,
         registeration_type = data['registerationType'],
         reporter_name = data['reporterName'],
         reporter_age = data['reporterAge'],

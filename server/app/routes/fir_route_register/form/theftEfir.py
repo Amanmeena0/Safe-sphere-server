@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, theftEfir
 from datetime import datetime
+from app.utils.auth import verify_token
 import os
 import requests
 
 theft_bp = Blueprint('theft', __name__)
 
 @theft_bp.route('/theft', methods=['POST'])
+@verify_token
 def report_theft():
     try:
         data = request.json
@@ -19,6 +21,7 @@ def report_theft():
             date_of_theft = datetime.strptime(date_of_theft, '%Y-%m-%d').date()
             
         new_theft = theftEfir(
+            user_auth_id=request.user_id,
             incident_description=data['incident_description'],
             date_of_theft=date_of_theft,
             financial_impact=data.get('financial_impact', ''),  # Optional field

@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, mvTheft
 from datetime import datetime
+from app.utils.auth import verify_token
 import os
 import requests
 
 mvtheft_bp = Blueprint('mvtheft', __name__)
 
 @mvtheft_bp.route('/mv_theft', methods=['POST'])
+@verify_token
 def report_mv_theft():
     try:
         data = request.json
@@ -19,6 +21,7 @@ def report_mv_theft():
             date_of_theft = datetime.strptime(date_of_theft, '%Y-%m-%d').date()
             
         new_mv_theft = mvTheft(
+            user_auth_id=request.user_id,
             vehicleDetails=data['vehicle_details'],
             owner_details=data['owner_details'],
             date_of_theft=date_of_theft,

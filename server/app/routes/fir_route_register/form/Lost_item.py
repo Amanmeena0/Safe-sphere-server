@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, LostItem
 from datetime import datetime
+from app.utils.auth import verify_token
 import os
 import requests
 
 lost_item_bp = Blueprint('lost_item', __name__)
 
 @lost_item_bp.route('/fir/lost-item/register', methods=['POST'])
+@verify_token
 def register_lost_item():
     data = request.get_json()
 
@@ -22,6 +24,7 @@ def register_lost_item():
         return jsonify({'error': 'Invalid date format for date found'}), 400
 
     new_lost_item = LostItem(
+        user_auth_id=request.user_id,
         item_name=data['itemName'],
         brand=data['brandname'],
         model=data['model'],

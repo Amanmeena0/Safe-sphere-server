@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, missingPerson
 from datetime import datetime
+from app.utils.auth import verify_token
 import os
 import requests
 
@@ -8,6 +9,7 @@ import requests
 missingPerson_bp = Blueprint('missingPerson', __name__)
 
 @missingPerson_bp.route('/missing_person', methods=['POST'])
+@verify_token
 def report_missing_person():
     try:
         data = request.json
@@ -20,6 +22,7 @@ def report_missing_person():
             date_time_last_seen = datetime.fromisoformat(date_time_last_seen.replace('Z', '+00:00'))
             
         new_missing_person = missingPerson(
+            user_auth_id=request.user_id,
             Fullname=data['name'],
             Numberofperson=int(data['number_of_person']),
             nickname=data['nick_name'],
