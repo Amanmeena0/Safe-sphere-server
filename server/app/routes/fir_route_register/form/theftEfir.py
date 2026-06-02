@@ -7,7 +7,7 @@ import requests
 
 theft_bp = Blueprint('theft', __name__)
 
-@theft_bp.route('/theft', methods=['POST'])
+@theft_bp.route('api/firs/theft', methods=['POST'])
 @verify_token
 def report_theft():
     try:

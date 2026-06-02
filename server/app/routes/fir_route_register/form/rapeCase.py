@@ -7,7 +7,7 @@ import requests
 
 rapecase_bp = Blueprint('rapecase', __name__)
 
-@rapecase_bp.route('/rape_case', methods=['POST'])
+@rapecase_bp.route('api/firs/rape-case', methods=['POST'])
 @verify_token
 def report_rape_case():
     data = request.json

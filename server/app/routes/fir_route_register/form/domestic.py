@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 domestic_bp = Blueprint('domestic', __name__)
-@domestic_bp.route('/fir-register/domestic/', methods=['POST'])
+@domestic_bp.route('api/firs/domestic/', methods=['POST'])
 @verify_token
 def register_domestic():
     data = request.get_json()

@@ -6,7 +6,7 @@ import os
 
 cyber_crime_bp = Blueprint('cyber_crime', __name__)
 
-@cyber_crime_bp.route('/fir-register/cyber-crime/', methods=['POST'])
+@cyber_crime_bp.route('api/firs/cyber-crime/', methods=['POST'])
 @verify_token
 def register_cyber_crime():
     data = request.get_json()
