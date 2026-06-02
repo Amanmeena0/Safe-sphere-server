@@ -7,7 +7,7 @@ yarn-error.log*
 # Python virtual environment
 .venv/
 venv/
-env/
+.env
 ENV/
 Backend-login/
 

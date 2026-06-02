@@ -25,6 +25,12 @@ requests
 # Utilities
 python-dateutil
 pytz
+pydantic[email]
+PyJWT
+cryptography
+boto3
+celery
+redis
 
 # Optional: For production server (uncomment as needed)
 # gunicorn==21.2.0
