@@ -22,6 +22,10 @@ def verify_token(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
+        # Allow preflight OPTIONS requests to pass without authentication
+        if request.method == 'OPTIONS':
+            return f(*args, **kwargs)
+
         token = None
         # Check Authorization header
         if 'Authorization' in request.headers:
@@ -30,6 +34,7 @@ def verify_token(f):
                 token = auth_header[1]
 
         if not token:
+            print("DEBUG: Authentication token is missing!")
             return jsonify({'message': 'Authentication token is missing!'}), 401
 
         try:
@@ -48,13 +53,17 @@ def verify_token(f):
             # This ensures subsequent code uses a verified identity.
             request.user_id = payload.get("sub")
             request.user_payload = payload
+            print(f"DEBUG: Token verified for user {request.user_id}")
             
         except jwt.ExpiredSignatureError:
+            print("DEBUG: Token has expired!")
             return jsonify({'message': 'Token has expired!'}), 401
         except jwt.InvalidTokenError as e:
+            print(f"DEBUG: Invalid token: {str(e)}")
             return jsonify({'message': f'Invalid token: {str(e)}'}), 401
         except Exception as e:
             # Handles connection issues to JWKS or other unexpected errors
+            print(f"DEBUG: Authentication error: {str(e)}")
             return jsonify({'message': f'Authentication error: {str(e)}'}), 401
 
         return f(*args, **kwargs)

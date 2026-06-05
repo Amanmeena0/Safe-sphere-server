@@ -24,7 +24,7 @@ def register_domestic():
     new_domestic = domesticForm(
         user_auth_id=request.user_id,
         registeration_type = data['registerationType'],
-        reporter_name = data['reporterName'],
+        reporter_details = data['reporterName'],
         reporter_age = data['reporterAge'],
         reporter_gender = data['reporterGender'],
         reporter_contact = data['reporterContact'],
@@ -34,7 +34,7 @@ def register_domestic():
         employer_contact = data['employerContact'],
         employer_relations = data['employerrelations'],
         employer_address = data['employerAddress'],
-        documentation = data['documentation'],
+        documentation = data.get('documentation', ''),
         duration_of_stay = data['durationOfStay'],
     )
 

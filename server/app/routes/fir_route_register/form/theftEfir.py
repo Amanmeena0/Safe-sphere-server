@@ -27,7 +27,7 @@ def report_theft():
             financial_impact=data.get('financial_impact', ''),  # Optional field
             witness_information=data.get('witness_information', ''),  # Optional field
             complainant_details=data.get('complainant_details', ''),  # Optional field
-            upload_document=data.get('upload_documents', b''),  # Default to empty bytes if no document
+            upload_document=data.get('upload_documents', ''),  # Default to empty string if no document
             police_station=data['police_station'],
         )
         db.session.add(new_theft)

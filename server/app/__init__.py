@@ -3,7 +3,7 @@ from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from app.config import Config
-from app.models import db
+from app.models_legacy import db
 from app.utils.celery_app import celery
 
 # Configure logging
@@ -28,7 +28,11 @@ def create_app():
     celery.conf.update(app.config)
 
     # Enable CORS for the specific frontend origin
-    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+    CORS(app, resources={r"/*": {
+        "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }}, supports_credentials=True)
 
     from app.routes.search_routes import search_bp
     from app.routes.hello_auth import hello_bp 

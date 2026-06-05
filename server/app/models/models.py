@@ -1,0 +1,157 @@
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Float
+from app.models.database import Base
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    auth_id = Column(String(255), unique=True, nullable=False)
+    name = Column(String(100))
+    email = Column(String(100))
+    phone = Column(String(15))
+    address = Column(String(255))
+    role = Column(String(50))
+    date_of_birth = Column(Date)
+    emergency_contact_name = Column(String(100))
+    emergency_contact_phone = Column(String(15))
+    registration_date = Column(DateTime)
+    updated_at = Column(DateTime)
+    status = Column(String(20))
+
+
+class LostItem(Base):
+    __tablename__ = 'lost_items'
+
+    id = Column(Integer, primary_key=True)
+    user_auth_id = Column(String(255), nullable=False)
+    item_name = Column(String(100), nullable=False)
+    brand = Column(String(100))
+    model = Column(String(100))
+    placeofloss = Column(String(255))
+    loss_datetime = Column(DateTime, nullable=False)
+    owner_name = Column(String(100), nullable=False)
+    contact_number = Column(String(15), nullable=False)
+    address = Column(String(255))
+    document_type = Column(Text, nullable=False)
+    police_station = Column(String(100))
+    district = Column(String(100))
+
+class cyberCrime(Base):
+    __tablename__ = 'cyber_crimes'
+
+    id = Column(Integer, primary_key=True)
+    user_auth_id = Column(String(255), nullable=False)
+    crimeCategory = Column(String(100), nullable=False)
+    platform = Column(String(100))
+    date_of_incident = Column(Date, nullable=False)
+    time = Column(String(50))
+    IpAddress = Column(String(50))
+    description = Column(Text, nullable=False)
+    digitalEvidence = Column(Text, default='')
+    full_name = Column(String(100), nullable=False)
+    contact_number = Column(String(15), nullable=False)
+    email = Column(String(100))
+    address = Column(String(255), nullable=False)
+    age = Column(Integer)
+    gender = Column(String(10))
+    relation = Column(String(50))
+    policeStation = Column(String(100), nullable=False)
+
+class rapecase(Base):
+    __tablename__ = 'rape_cases'
+
+    id = Column(Integer, primary_key=True)
+    user_auth_id = Column(String(255), nullable=False)
+    victim_name = Column(String(100), nullable=False)
+    age = Column(Integer)
+    gender = Column(String(10))
+    incidentDetails = Column(Text, nullable=False)
+    perpetratorDetails = Column(Text, nullable=False)
+    location_of_incident = Column(String(255), nullable=False)
+    date_of_incident = Column(Date, nullable=False)
+    time_of_incident = Column(String(50), nullable=False)
+    upload_document = Column(Text, default='')
+    informant_details = Column(Text, nullable=False)
+    police_station = Column(String(100), nullable=False)
+
+
+class domesticForm(Base):
+    __tablename__ = 'domestic_forms'
+
+    id = Column(Integer, primary_key=True)
+    user_auth_id = Column(String(255), nullable=False)
+    registeration_type = Column(String(100), nullable=False)
+    reporter_details = Column(Text, nullable=False)
+    reporter_age = Column(Integer)
+    reporter_gender = Column(String(10))
+    reporter_contact = Column(String(15))
+    reporter_Emailaddress = Column(String(255), nullable=False)
+    reporter_native_place = Column(String(255), nullable=False)
+    employer_name = Column(String(100), nullable=False)
+    employer_contact = Column(String(15), nullable=False)
+    employer_relations = Column(String(100), nullable=False)
+    employer_address = Column(String(255), nullable=False)
+    documentation = Column(Text, default='')
+    duration_of_stay = Column(String(100), nullable=False)
+
+
+class theftEfir(Base):
+    __tablename__ = 'theft_efirs'
+
+    id = Column(Integer, primary_key=True)
+    user_auth_id = Column(String(255), nullable=False)
+    incident_description = Column(Text, nullable=False)
+    date_of_theft = Column(Date, nullable=False)
+    financial_impact = Column(Text)
+    witness_information = Column(Text)
+    complainant_details = Column(Text)
+    upload_document = Column(Text, default='')
+    police_station = Column(String(100), nullable=False)
+
+class mvTheft(Base):
+    __tablename__ = 'mv_thefts'
+
+    id = Column(Integer, primary_key=True)
+    user_auth_id = Column(String(255), nullable=False)
+    vehicleDetails = Column(Text, nullable=False)
+    owner_details = Column(Text, nullable=False)
+    date_of_theft = Column(Date, nullable=False)
+    timeoftheft = Column(String(50), nullable=False)
+    location_of_theft = Column(String(255), nullable=False)
+    previous_fir_details = Column(Text, nullable=False)
+    upload_document = Column(Text, default='')
+    police_station = Column(String(100), nullable=False)
+
+
+class missingPerson(Base):
+    __tablename__ = 'missing_persons'
+
+    id = Column(Integer, primary_key=True)
+    user_auth_id = Column(String(255), nullable=False)
+    Fullname = Column(String(100), nullable=False)
+    Numberofperson = Column(Integer, nullable=False)
+    nickname = Column(String(100), nullable=False)
+    fathername = Column(String(100), nullable=False)
+    relation = Column(String(100), nullable=False)
+    lastknownlocation = Column(String(255), nullable=False)
+    gender = Column(String(10))
+    yearofbirth = Column(Integer, nullable=False)
+    agefrom = Column(Integer, nullable=False)
+    ageto = Column(Integer, nullable=False)
+    bodybuild = Column(String(100), nullable=False)
+    complexion = Column(String(100), nullable=False)
+    weight = Column(Float, nullable=False)
+    height = Column(Float, nullable=False)
+    incidentReport = Column(Text, nullable=False)
+    detailsLastseen = Column(Text, nullable=False)
+    datetimelastseen = Column(DateTime, nullable=False)
+    complainant_name = Column(Text, nullable=False)
+    relationwithMissingperson = Column(String(100), nullable=False)
+    complainant_address = Column(String(255), nullable=False)
+    complainant_contact = Column(String(15), nullable=False)
+    alternate_contact = Column(String(15), nullable=False)
+    emailaddress = Column(String(255), nullable=False)
+    anyotherdetails = Column(Text, nullable=False)
+    policestation = Column(String(100), nullable=False)
+    district = Column(String(100), nullable=False)
+    upload_document = Column(Text, default='')

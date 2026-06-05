@@ -36,7 +36,7 @@ class LostItem(db.Model):
     owner_name = db.Column(db.String(100), nullable=False)
     contact_number = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String(255))
-    document_type = db.Column(db.String(512), nullable=False)
+    document_type = db.Column(db.Text, nullable=False)
     police_station = db.Column(db.String(100))
     district = db.Column(db.String(100))
 
@@ -51,7 +51,7 @@ class cyberCrime(db.Model):
     time = db.Column(db.String(50))
     IpAddress = db.Column(db.String(50))
     description = db.Column(db.Text, nullable=False)
-    digitalEvidence = db.Column(db.String(512), default='')
+    digitalEvidence = db.Column(db.Text, default='')
     full_name = db.Column(db.String(100), nullable=False)
     contact_number = db.Column(db.String(15), nullable=False)
     email = db.Column(db.String(100))
@@ -74,7 +74,7 @@ class rapecase(db.Model):
     location_of_incident = db.Column(db.String(255), nullable=False)
     date_of_incident = db.Column(db.Date, nullable=False)
     time_of_incident = db.Column(db.String(50), nullable=False)
-    upload_document = db.Column(db.String(512), default='')
+    upload_document = db.Column(db.Text, default='')
     informant_details = db.Column(db.Text, nullable=False)
     police_station = db.Column(db.String(100), nullable=False)
 
@@ -95,7 +95,7 @@ class domesticForm(db.Model):
     employer_contact = db.Column(db.String(15), nullable=False)
     employer_relations = db.Column(db.String(100), nullable=False)
     employer_address = db.Column(db.String(255), nullable=False)
-    documentation = db.Column(db.String(512), default='')
+    documentation = db.Column(db.Text, default='')
     duration_of_stay = db.Column(db.String(100), nullable=False)
 
 
@@ -109,7 +109,7 @@ class theftEfir(db.Model):
     financial_impact = db.Column(db.Text)
     witness_information = db.Column(db.Text)
     complainant_details = db.Column(db.Text)
-    upload_document = db.Column(db.String(512), default='')
+    upload_document = db.Column(db.Text, default='')
     police_station = db.Column(db.String(100), nullable=False)
 
 class mvTheft(db.Model):
@@ -123,7 +123,7 @@ class mvTheft(db.Model):
     timeoftheft = db.Column(db.String(50), nullable=False)
     location_of_theft = db.Column(db.String(255), nullable=False)
     previous_fir_details = db.Column(db.Text, nullable=False)
-    upload_document = db.Column(db.String(512), default='')
+    upload_document = db.Column(db.Text, default='')
     police_station = db.Column(db.String(100), nullable=False)
 
 
@@ -158,4 +158,4 @@ class missingPerson(db.Model):
     anyotherdetails = db.Column(db.Text, nullable=False)
     policestation = db.Column(db.String(100), nullable=False)
     district = db.Column(db.String(100), nullable=False)
-    upload_document = db.Column(db.String(512), default='')
+    upload_document = db.Column(db.Text, default='')
