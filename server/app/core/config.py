@@ -4,6 +4,8 @@ from typing import Optional
 class Settings(BaseSettings):
     SECRET_KEY: str = "aman-meena"
     DATABASE_URL: str
+    SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
+    
     REDIS_URL: str = "redis://localhost:6379/0"
     CELERY_BROKER_URL: Optional[str] = None
     CELERY_RESULT_BACKEND: Optional[str] = None

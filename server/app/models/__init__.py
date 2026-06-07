@@ -1,1 +1,10 @@
-from app.models_legacy import db, User, cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft
+from .models import (
+    User, 
+    LostItem, 
+    cyberCrime, 
+    rapecase, 
+    domesticForm, 
+    theftEfir, 
+    mvTheft, 
+    missingPerson
+)

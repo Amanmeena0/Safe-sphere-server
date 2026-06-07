@@ -1,44 +1,63 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.api.dependencies import get_db, get_current_user
-from app.models.models import User, cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft
+from app.services.user_service import UserService
+from app.schemas.user import UserCreate, UserUpdate
+from app.models.models import cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft
 
 router = APIRouter()
 
-@router.get("/api/profile")
-async def get_profile(
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register_user(
+    user_data: UserCreate,
+    db: Session = Depends(get_db)
 ):
+    service = UserService(db)
+    return service.register_user(user_data)
+
+@router.get("/check")
+async def check_profile(
+    db: Session = Depends(get_db),
+    auth_id: str = Depends(get_current_user)
+):
+    service = UserService(db)
     try:
-        user = db.query(User).filter(User.auth_id == user_id).first()
-        
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        user_data = {
-            "id": user.id,
-            "auth_id": user.auth_id,
-            "name": user.name,
-            "email": user.email,
-            "phone": user.phone,
-            "address": user.address,
+        user = service.get_profile(auth_id)
+        return {
+            "exists": True,
+            "profile_completed": True,
             "role": user.role,
-            "date_of_birth": user.date_of_birth.isoformat() if user.date_of_birth else None,
-            "emergency_contact_name": user.emergency_contact_name,
-            "emergency_contact_phone": user.emergency_contact_phone,
-            "registration_date": user.registration_date.isoformat() if user.registration_date else None,
-            "updated_at": user.updated_at.isoformat() if user.updated_at else None,
-            "status": user.status
+            "user_data": {
+                "name": user.name,
+                "email": user.email,
+                "phone": user.phone,
+                "role": user.role,
+                "registration_date": user.registration_date.isoformat() if user.registration_date else None
+            }
         }
-        return user_data
+    except HTTPException as e:
+        if e.status_code == 404:
+            return {"exists": False, "profile_completed": False}
+        raise e
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error occurred: {str(e)}")
+@router.get("/me")
+async def get_my_profile(
+    db: Session = Depends(get_db),
+    auth_id: str = Depends(get_current_user)
+):
+    service = UserService(db)
+    return service.get_profile(auth_id)
 
-@router.get("/api/profile/my-firs")
+@router.put("/me")
+async def update_my_profile(
+    update_data: UserUpdate,
+    db: Session = Depends(get_db),
+    auth_id: str = Depends(get_current_user)
+):
+    service = UserService(db)
+    return service.update_profile(auth_id, update_data)
+
+@router.get("/my-firs")
 async def get_my_firs(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user)
@@ -64,24 +83,3 @@ async def get_my_firs(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch reports: {str(e)}")
-
-@router.delete("/api/profile")
-async def delete_profile(
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user)
-):
-    try:
-        user = db.query(User).filter(User.auth_id == user_id).first()
-
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        db.delete(user)
-        db.commit()
-        return {"message": "User profile deleted successfully."}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Database error occurred: {str(e)}")

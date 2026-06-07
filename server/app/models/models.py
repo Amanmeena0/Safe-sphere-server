@@ -7,22 +7,13 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     auth_id = Column(String(255), unique=True, nullable=False)
     name = Column(String(100))
-    email = Column(String(100))
-    phone = Column(String(15))
-    address = Column(String(255))
-    role = Column(String(50))
-    date_of_birth = Column(Date)
-    emergency_contact_name = Column(String(100))
-    emergency_contact_phone = Column(String(15))
-    registration_date = Column(DateTime)
-    updated_at = Column(DateTime)
-    status = Column(String(20))
+    status = Column(String(100))
 
 
 class LostItem(Base):
     __tablename__ = 'lost_items'
 
-    id = Column(Integer, primary_key=True)
+    auth_id = Column(Integer, primary_key=True)
     user_auth_id = Column(String(255), nullable=False)
     item_name = Column(String(100), nullable=False)
     brand = Column(String(100))
@@ -39,7 +30,7 @@ class LostItem(Base):
 class cyberCrime(Base):
     __tablename__ = 'cyber_crimes'
 
-    id = Column(Integer, primary_key=True)
+    auth_id = Column(Integer, primary_key=True)
     user_auth_id = Column(String(255), nullable=False)
     crimeCategory = Column(String(100), nullable=False)
     platform = Column(String(100))
@@ -60,7 +51,7 @@ class cyberCrime(Base):
 class rapecase(Base):
     __tablename__ = 'rape_cases'
 
-    id = Column(Integer, primary_key=True)
+    auth_id = Column(Integer, primary_key=True)
     user_auth_id = Column(String(255), nullable=False)
     victim_name = Column(String(100), nullable=False)
     age = Column(Integer)
@@ -78,7 +69,7 @@ class rapecase(Base):
 class domesticForm(Base):
     __tablename__ = 'domestic_forms'
 
-    id = Column(Integer, primary_key=True)
+    auth_id = Column(Integer, primary_key=True)
     user_auth_id = Column(String(255), nullable=False)
     registeration_type = Column(String(100), nullable=False)
     reporter_details = Column(Text, nullable=False)
@@ -98,7 +89,7 @@ class domesticForm(Base):
 class theftEfir(Base):
     __tablename__ = 'theft_efirs'
 
-    id = Column(Integer, primary_key=True)
+    auth_id = Column(Integer, primary_key=True)
     user_auth_id = Column(String(255), nullable=False)
     incident_description = Column(Text, nullable=False)
     date_of_theft = Column(Date, nullable=False)
@@ -111,7 +102,7 @@ class theftEfir(Base):
 class mvTheft(Base):
     __tablename__ = 'mv_thefts'
 
-    id = Column(Integer, primary_key=True)
+    auth_id = Column(Integer, primary_key=True)
     user_auth_id = Column(String(255), nullable=False)
     vehicleDetails = Column(Text, nullable=False)
     owner_details = Column(Text, nullable=False)
@@ -126,7 +117,7 @@ class mvTheft(Base):
 class missingPerson(Base):
     __tablename__ = 'missing_persons'
 
-    id = Column(Integer, primary_key=True)
+    auth_id = Column(Integer, primary_key=True)
     user_auth_id = Column(String(255), nullable=False)
     Fullname = Column(String(100), nullable=False)
     Numberofperson = Column(Integer, nullable=False)

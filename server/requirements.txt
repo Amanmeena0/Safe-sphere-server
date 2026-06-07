@@ -35,3 +35,11 @@ redis
 # Optional: For production server (uncomment as needed)
 # gunicorn==21.2.0
 # python-multipart==0.0.6
+
+fastapi
+uvicorn
+
+# Testing
+pytest
+pytest-mock
+httpx

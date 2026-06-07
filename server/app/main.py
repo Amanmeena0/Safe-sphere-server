@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api.routes import hello_auth, missingPerson, profile
+from app.api.routes import hello_auth, profile, fir, bot, search, sos
 
 app = FastAPI(title="Safe-sphere Backend")
 
@@ -24,5 +24,8 @@ async def internal_error_handler(request: Request, exc: Exception):
 
 # Include Routers
 app.include_router(hello_auth.router, tags=["General"])
-app.include_router(missingPerson.router, tags=["FIR Forms"])
-app.include_router(profile.router, tags=["Profile"])
+app.include_router(profile.router, prefix="/api/profile", tags=["Profile"])
+app.include_router(fir.router, prefix="/api/fir", tags=["FIR Forms"])
+app.include_router(bot.router, prefix="/api/bot", tags=["Bot"])
+app.include_router(search.router, prefix="/api/search", tags=["Search"])
+app.include_router(sos.router, prefix="/api/sos", tags=["SOS"])
