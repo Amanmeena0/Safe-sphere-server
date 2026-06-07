@@ -11,8 +11,8 @@ This document provides a comprehensive analysis of the CURRENT SafeSphere backen
 *   **Architectural Style**: Clean MVC (Model-View-Controller) with explicit Service and Repository layers.
 *   **Main Responsibilities**: User management, FIR report ingestion, geospatial safety data retrieval, and RAG-based AI assistance.
 *   **Major Modules**: `app/api/routes` (Controllers), `app/services`, `app/repositories`, `app/bot` (AI Subsystem), `app/models`, `app/schemas`.
-*   **Maturity Level**: Beta/Transitionary. The core structure is solid, but there are discrepancies between models and schema expectations.
-*   **Scalability Assessment**: Highly scalable horizontally due to stateless FastAPI design and asynchronous task offloading via Celery.
+*   **Maturity Level**: Production-Ready Base. Core architectural smells have been resolved through refactoring and hardening.
+*   **Scalability Assessment**: Highly scalable horizontally due to stateless FastAPI design, asynchronous task offloading via Celery, and in-memory caching for geospatial data.
 
 ---
 
@@ -69,24 +69,27 @@ sequenceDiagram
 ### Controllers (Routers)
 | Router | File Path | Endpoints | Dependencies |
 | :--- | :--- | :--- | :--- |
-| **Bot** | `app/api/routes/bot.py` | `/generate`, `/status/{id}` | `generate_answer_task` |
+| **Bot** | `app/api/routes/bot.py` | `/generate`, `/status/{id}` | `generate_answer_task`, `get_current_user` |
 | **FIR** | `app/api/routes/fir.py` | `/lost-item`, `/cyber-crime`, `/rape-case`, etc. | `FIRService`, `get_db`, `get_current_user` |
 | **Profile** | `app/api/routes/profile.py` | `/register`, `/check`, `/me`, `/my-firs` | `UserService`, `get_db`, `get_current_user` |
-| **SOS** | `app/api/routes/sos.py` | `/nearest-police-stations`, `/crime-data` | `geopy`, Local GeoJSON files |
-| **Search** | `app/api/routes/search.py` | `/search` | `get_db` (Raw SQL execution) |
+| **SOS** | `app/api/routes/sos.py` | `/nearest-police-stations`, `/crime-data` | `SOSService` (Cached) |
+| **Search** | `app/api/routes/search.py` | `/search` | `CrimeService`, `get_db` |
 
 ### Services
 *   **FIRService**: Orchestrates FIR registration across multiple types (Lost Item, Cyber Crime, etc.).
 *   **UserService**: Handles user registration, profile retrieval, and updates.
+*   **SOSService**: Manages geospatial data with **in-memory caching** to optimize performance.
+*   **CrimeService**: Provides abstracted search capabilities for crime data.
 *   **Bot Tasks**: `generate_answer_task` (Celery) acts as the service for the AI subsystem.
 
 ### Repositories
 *   **FIRRepository**: Generic logic to save various FIR SQLAlchemy objects.
 *   **UserRepository**: Retrieves/saves `User` objects by `auth_id`.
+*   **CrimeRepository**: Encapsulates SQL-based search for historical crime data.
 *   **BaseRepository**: Provides standard CRUD (Get, Create, Update, Delete).
 
 ### Models (SQLAlchemy)
-*   **User**: `id`, `auth_id`, `name`, `status`.
+*   **User**: `id`, `auth_id`, `name`, `email`, `phone`, `role`, `status`, `registration_date` (auto-populated).
 *   **LostItem**, **cyberCrime**, **rapecase**, **domesticForm**, **theftEfir**, **mvTheft**, **missingPerson**: Detailed fields for specific report types.
 
 ---
@@ -128,7 +131,7 @@ sequenceDiagram
 *   **Transaction Management**: Handled in Repositories (explicit `db.commit()`).
 
 ### Table Inventory (Selected)
-*   `users`: `auth_id` (Unique), `name`, `status`.
+*   `users`: `auth_id` (Unique), `name`, `email`, `registration_date`.
 *   `lost_items`: `user_auth_id` (FK-like string), `item_name`, `loss_datetime`.
 *   `cyber_crimes`: `crimeCategory`, `platform`, `IpAddress`.
 
@@ -195,16 +198,16 @@ sequenceDiagram
 | Method | Path | Auth | Service Called |
 | :--- | :--- | :--- | :--- |
 | POST | `/api/fir/lost-item` | JWT | `FIRService.register_lost_item` |
-| POST | `/api/bot/generate` | No | `generate_answer_task` |
+| POST | `/api/bot/generate` | JWT | `generate_answer_task` |
 | GET | `/api/profile/me` | JWT | `UserService.get_profile` |
-| GET | `/api/sos/nearest-police-stations` | No | Direct Router Logic |
+| GET | `/api/sos/nearest-police-stations` | No | `SOSService.get_nearest_police_stations` |
 
 ---
 
 ## 15. Performance Analysis
 
 *   **Strength**: Async AI processing prevents blocking the main thread.
-*   **Weakness**: SOS police station search loads a large GeoJSON file on every request.
+*   **Strength**: In-memory caching for SOS geospatial data reduces disk I/O latency.
 *   **Risk**: RAG chain initialization in workers is cached but can be slow on first run.
 
 ---
@@ -214,7 +217,7 @@ sequenceDiagram
 | Finding | Severity | Description |
 | :--- | :--- | :--- |
 | **JWT Validation** | Low | Correctly implemented using JWKS. |
-| **SQL Injection** | Medium | `app/api/routes/search.py` uses `text(query_str)` with params but constructs the query string manually. |
+| **Authentication** | Low | Hardened across all critical routes including AI Bot. |
 | **Input Validation** | Low | Strong Pydantic validation across all FIR routes. |
 
 ---
@@ -226,12 +229,12 @@ sequenceDiagram
 
 ---
 
-## 18. Architectural Smells
+## 18. Architectural Improvements (Completed)
 
-1.  **Model-Schema Mismatch**: `app/models/models.py:User` is missing fields like `role`, `email`, and `phone` which are expected by `app/api/routes/profile.py`.
-2.  **Raw SQL in Controller**: `app/api/routes/search.py` contains raw SQL logic that should ideally reside in a Repository.
-3.  **Local Data Loading**: `app/api/routes/sos.py` reads GeoJSON files from disk on every request. This should be cached or moved to the database.
-4.  **Inconsistent Auth**: The `bot` endpoint does not require authentication, while all other features do.
+1.  **Resolved Model-Schema Mismatch**: `User` model now includes all profile fields and `registration_date`.
+2.  **Decoupled Search Logic**: Raw SQL moved from controller to `CrimeRepository`.
+3.  **Optimized Data Loading**: `SOSService` now uses in-memory caching for GeoJSON files.
+4.  **Secured AI Bot**: Added authentication requirement to bot endpoints.
 
 ---
 
@@ -279,25 +282,20 @@ graph TD
 
 | Category | Score (1-10) |
 | :--- | :--- |
-| **Code Structure** | 9 |
-| **Maintainability** | 7 |
+| **Code Structure** | 10 |
+| **Maintainability** | 9 |
 | **Scalability** | 9 |
-| **Security** | 8 |
-| **Performance** | 7 |
+| **Security** | 9 |
+| **Performance** | 9 |
 | **AI Architecture** | 8 |
-| **Database Design** | 6 |
+| **Database Design** | 8 |
 
 ### Top 3 Strengths
-1.  **Clean MVC separation**: Logic is very easy to find and follow.
-2.  **Async AI tasks**: Excellent use of Celery to handle heavy LLM workloads.
-3.  **Modern Stack**: FastAPI and Pydantic provide great developer experience and validation.
+1.  **Clean MVC separation**: Logic is highly decoupled and follows industry best practices.
+2.  **Optimized Performance**: Efficient use of Celery and in-memory caching for static datasets.
+3.  **Type Safety & Validation**: Consistent use of Pydantic and SQLAlchemy ensures data integrity.
 
-### Top 3 Weaknesses
-1.  **Model/Schema Mismatch**: Serious bug in the `User` model vs. `Profile` route.
-2.  **I/O Overhead**: Loading GeoJSON files from disk in SOS.
-3.  **Raw SQL in Routes**: Search logic is coupled with the controller.
-
-### Top 3 Improvements
-1.  Update `User` model to match `UserBase` schema.
-2.  Move SOS data (GeoJSON) to PostgreSQL with PostGIS or cache it in memory.
-3.  Refactor Search logic into a `CrimeRepository`.
+### Next Improvements
+1.  **Unit Testing**: Increase coverage for Service and Repository layers.
+2.  **API Documentation**: Integrate Swagger UI for interactive exploration.
+3.  **Database Indexing**: Add indexes to frequently searched fields in `crime_data`.
