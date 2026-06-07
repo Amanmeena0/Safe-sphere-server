@@ -4,7 +4,7 @@ from app.core.config import settings
 
 if __name__ == "__main__":
     # Get port from environment or default to 5000
-    port = int(os.getenv("PORT", 5000))
+    port = int(os.getenv("PORT", 8000))
     
     # Run FastAPI app
     uvicorn.run(
