@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Float
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Float, func
 from app.models.database import Base
 
 class User(Base):
@@ -7,7 +7,8 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     auth_id = Column(String(255), unique=True, nullable=False)
     name = Column(String(100))
-    status = Column(String(100))
+    email = Column(String(100))
+    registration_date = Column(DateTime, default=func.now())
 
 
 class LostItem(Base):

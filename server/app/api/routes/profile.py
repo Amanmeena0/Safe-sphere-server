@@ -30,8 +30,6 @@ async def check_profile(
             "user_data": {
                 "name": user.name,
                 "email": user.email,
-                "phone": user.phone,
-                "role": user.role,
                 "registration_date": user.registration_date.isoformat() if user.registration_date else None
             }
         }
