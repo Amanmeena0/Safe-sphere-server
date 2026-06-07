@@ -15,6 +15,7 @@ python-dotenv
 langchain
 huggingface-hub
 langchain-community
+langchain-huggingface
 chromadb
 
 # Geospatial

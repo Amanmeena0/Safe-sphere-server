@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import RecursiveUrlLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 import os
@@ -53,9 +53,9 @@ def create_vector_store(chunks):
         raise ValueError("No text chunks to embed.")
 
     logger.info(f"🔍 Total chunks to embed: {len(chunks)}")
-    embeddings_model = HuggingFaceInferenceAPIEmbeddings(
-        api_key=api_key,
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    embeddings_model = HuggingFaceEndpointEmbeddings(
+        huggingfacehub_api_token=api_key,
+        model="sentence-transformers/all-MiniLM-L6-v2"
     )
 
     try:
@@ -78,15 +78,15 @@ def create_vector_store(chunks):
         collection_name="crime_qa_collection",
         persist_directory=persist_dir
     )
-    vector_store.persist()
-    logger.info("✅ Vector store persisted successfully.")
+    logger.info("✅ Vector store created successfully.")
     return vector_store
 
 
 if __name__ == "__main__":
     # Combine questions and answers for better context
-    questions_file = "./crime_questions.txt"
-    answers_file = "./crime_answers.txt"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    questions_file = os.path.join(current_dir, "crime_questions.txt")
+    answers_file = os.path.join(current_dir, "crime_answers.txt")
     
     try:
         with open(questions_file, "r", encoding="utf-8") as f:
