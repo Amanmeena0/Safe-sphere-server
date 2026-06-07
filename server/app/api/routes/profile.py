@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+import json
 from app.api.dependencies import get_db, get_current_user
 from app.services.user_service import UserService
 from app.schemas.user import UserCreate, UserUpdate
 from app.models.models import cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft
+from app.utils.redis_client import get_redis
 
 router = APIRouter()
 
@@ -18,12 +20,19 @@ async def register_user(
 @router.get("/check")
 async def check_profile(
     db: Session = Depends(get_db),
-    auth_id: str = Depends(get_current_user)
+    auth_id: str = Depends(get_current_user),
+    redis = Depends(get_redis)
 ):
+    # Try fetching from cache first
+    cache_key = f"user_check:{auth_id}"
+    cached_data = redis.get(cache_key)
+    if cached_data:
+        return json.loads(cached_data)
+
     service = UserService(db)
     try:
         user = service.get_profile(auth_id)
-        return {
+        response_data = {
             "exists": True,
             "profile_completed": True,
             "role": user.role,
@@ -33,6 +42,9 @@ async def check_profile(
                 "registration_date": user.registration_date.isoformat() if user.registration_date else None
             }
         }
+        # Cache the result for 1 hour
+        redis.set(cache_key, json.dumps(response_data), ex=3600)
+        return response_data
     except HTTPException as e:
         if e.status_code == 404:
             return {"exists": False, "profile_completed": False}
@@ -41,19 +53,48 @@ async def check_profile(
 @router.get("/me")
 async def get_my_profile(
     db: Session = Depends(get_db),
-    auth_id: str = Depends(get_current_user)
+    auth_id: str = Depends(get_current_user),
+    redis = Depends(get_redis)
 ):
+    # Try fetching from cache first
+    cache_key = f"user_profile:{auth_id}"
+    cached_data = redis.get(cache_key)
+    if cached_data:
+        return json.loads(cached_data)
+
     service = UserService(db)
-    return service.get_profile(auth_id)
+    user = service.get_profile(auth_id)
+    
+    # Serialize the user object (assuming it has a way to be converted to dict or just pick fields)
+    # For now, let's assume service.get_profile returns a pydantic-compatible model or we manually build it
+    user_data = {
+        "id": user.id,
+        "auth_id": user.auth_id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role,
+        "registration_date": user.registration_date.isoformat() if user.registration_date else None
+    }
+    
+    # Cache the result for 1 hour
+    redis.set(cache_key, json.dumps(user_data), ex=3600)
+    return user_data
 
 @router.put("/me")
 async def update_my_profile(
     update_data: UserUpdate,
     db: Session = Depends(get_db),
-    auth_id: str = Depends(get_current_user)
+    auth_id: str = Depends(get_current_user),
+    redis = Depends(get_redis)
 ):
     service = UserService(db)
-    return service.update_profile(auth_id, update_data)
+    updated_user = service.update_profile(auth_id, update_data)
+    
+    # Invalidate existing caches
+    redis.delete(f"user_profile:{auth_id}")
+    redis.delete(f"user_check:{auth_id}")
+    
+    return updated_user
 
 @router.get("/my-firs")
 async def get_my_firs(
