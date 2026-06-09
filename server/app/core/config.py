@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = "us-east-1"
     AWS_S3_BUCKET: Optional[str] = None
     
+    CLERK_SECRET_KEY: Optional[str] = None
     CLERK_JWKS_URL: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

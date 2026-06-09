@@ -13,7 +13,7 @@ class SOSReportCreate(SOSReportBase):
     pass
 
 class SOSReportResponse(SOSReportBase):
-    auth_id: str
+    clerk_user_id: str
     status: str
     timestamp: datetime
 

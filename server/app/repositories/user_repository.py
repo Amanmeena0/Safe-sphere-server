@@ -7,5 +7,5 @@ class UserRepository(BaseRepository[User]):
     def __init__(self, db: Session):
         super().__init__(User, db)
 
-    def get_by_auth_id(self, auth_id: str) -> Optional[User]:
-        return self.db.query(User).filter(User.auth_id == auth_id).first()
+    def get_by_clerk_id(self, clerk_user_id: str) -> Optional[User]:
+        return self.db.query(User).filter(User.clerk_user_id == clerk_user_id).first()

@@ -299,3 +299,5 @@ graph TD
 1.  **Unit Testing**: Increase coverage for Service and Repository layers.
 2.  **API Documentation**: Integrate Swagger UI for interactive exploration.
 3.  **Database Indexing**: Add indexes to frequently searched fields in `crime_data`.
+
+

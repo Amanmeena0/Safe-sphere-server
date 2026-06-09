@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import datetime, date
 
 class FIRBase(BaseModel):
-    user_auth_id: str
+    clerk_user_id: str
     police_station: str
 
 class LostItemCreate(FIRBase):

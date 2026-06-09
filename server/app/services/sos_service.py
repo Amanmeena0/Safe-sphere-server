@@ -81,10 +81,10 @@ class SOSService:
             records.append(record)
         return records
 
-    def trigger_sos(self, db: Session, sos_data: SOSReportCreate, auth_id: str):
+    def trigger_sos(self, db: Session, sos_data: SOSReportCreate, clerk_user_id: str):
         try:
             db_sos = SOSReport(
-                auth_id=auth_id,
+                clerk_user_id=clerk_user_id,
                 location_address=sos_data.location_address,
                 latitude=sos_data.latitude,
                 longitude=sos_data.longitude,

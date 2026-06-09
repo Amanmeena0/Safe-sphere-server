@@ -1,21 +1,28 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Float, func
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Float, func, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 from app.models.database import Base
 
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True)
-    auth_id = Column(String(255), unique=True, nullable=False)
-    name = Column(String(100))
-    email = Column(String(100))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    clerk_user_id = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(100), index=True)
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    name = Column(String(200)) # Keep for compatibility or combine first/last
+    status = Column(String(50), default="active")
     registration_date = Column(DateTime, default=func.now())
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
 class LostItem(Base):
     __tablename__ = 'lost_items'
 
     auth_id = Column(Integer, primary_key=True)
-    user_auth_id = Column(String(255), nullable=False)
+    clerk_user_id = Column(String(255), nullable=False)
     item_name = Column(String(100), nullable=False)
     brand = Column(String(100))
     model = Column(String(100))
@@ -32,7 +39,7 @@ class cyberCrime(Base):
     __tablename__ = 'cyber_crimes'
 
     auth_id = Column(Integer, primary_key=True)
-    user_auth_id = Column(String(255), nullable=False)
+    clerk_user_id = Column(String(255), nullable=False)
     crimeCategory = Column(String(100), nullable=False)
     platform = Column(String(100))
     date_of_incident = Column(Date, nullable=False)
@@ -53,7 +60,7 @@ class rapecase(Base):
     __tablename__ = 'rape_cases'
 
     auth_id = Column(Integer, primary_key=True)
-    user_auth_id = Column(String(255), nullable=False)
+    clerk_user_id = Column(String(255), nullable=False)
     victim_name = Column(String(100), nullable=False)
     age = Column(Integer)
     gender = Column(String(10))
@@ -71,7 +78,7 @@ class domesticForm(Base):
     __tablename__ = 'domestic_forms'
 
     auth_id = Column(Integer, primary_key=True)
-    user_auth_id = Column(String(255), nullable=False)
+    clerk_user_id = Column(String(255), nullable=False)
     registeration_type = Column(String(100), nullable=False)
     reporter_details = Column(Text, nullable=False)
     reporter_age = Column(Integer)
@@ -91,7 +98,7 @@ class theftEfir(Base):
     __tablename__ = 'theft_efirs'
 
     auth_id = Column(Integer, primary_key=True)
-    user_auth_id = Column(String(255), nullable=False)
+    clerk_user_id = Column(String(255), nullable=False)
     incident_description = Column(Text, nullable=False)
     date_of_theft = Column(Date, nullable=False)
     financial_impact = Column(Text)
@@ -104,7 +111,7 @@ class mvTheft(Base):
     __tablename__ = 'mv_thefts'
 
     auth_id = Column(Integer, primary_key=True)
-    user_auth_id = Column(String(255), nullable=False)
+    clerk_user_id = Column(String(255), nullable=False)
     vehicleDetails = Column(Text, nullable=False)
     owner_details = Column(Text, nullable=False)
     date_of_theft = Column(Date, nullable=False)
@@ -119,7 +126,7 @@ class missingPerson(Base):
     __tablename__ = 'missing_persons'
 
     auth_id = Column(Integer, primary_key=True)
-    user_auth_id = Column(String(255), nullable=False)
+    clerk_user_id = Column(String(255), nullable=False)
     Fullname = Column(String(100), nullable=False)
     Numberofperson = Column(Integer, nullable=False)
     nickname = Column(String(100), nullable=False)
@@ -151,7 +158,8 @@ class missingPerson(Base):
 class SOSReport(Base):
     __tablename__ = 'sos_reports'
     
-    auth_id = Column(String(255), primary_key=True)  # auth_id from Clerk
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    clerk_user_id = Column(String(255), nullable=False, index=True)
     location_address = Column(Text, nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)

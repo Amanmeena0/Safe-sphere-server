@@ -10,6 +10,7 @@ psycopg2-binary
 
 # Environment & Configuration
 python-dotenv
+pydantic-settings
 
 # LLM & RAG (AI Bot)
 langchain
@@ -32,6 +33,7 @@ cryptography
 boto3
 celery
 redis
+clerk-sdk-python
 
 # Optional: For production server (uncomment as needed)
 # gunicorn==21.2.0
@@ -39,6 +41,7 @@ redis
 
 fastapi
 uvicorn
+alembic
 
 # Testing
 pytest

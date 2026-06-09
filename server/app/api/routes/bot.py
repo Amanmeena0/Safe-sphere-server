@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from app.api.dependencies import get_current_user
 from app.bot.tasks import generate_answer_task
+from app.models.models import User
 from celery.result import AsyncResult
 import logging
 
@@ -14,7 +15,7 @@ class BotQuery(BaseModel):
 @router.post("/generate", status_code=status.HTTP_202_ACCEPTED)
 async def generate_answer(
     data: BotQuery,
-    user_id: str = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     try:
         task = generate_answer_task.delay(data.query)
@@ -26,7 +27,7 @@ async def generate_answer(
 @router.get("/status/{task_id}")
 async def get_status(
     task_id: str,
-    user_id: str = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     task_result = AsyncResult(task_id)
     return {

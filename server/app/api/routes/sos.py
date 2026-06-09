@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.services.sos_service import SOSService
 from app.schemas.sos import SOSReportCreate, SOSReportResponse
 from app.api.dependencies import get_db, get_current_user
+from app.models.models import User
 
 router = APIRouter()
 sos_service = SOSService()
@@ -23,6 +24,6 @@ async def get_crime_data():
 async def trigger_sos(
     sos_data: SOSReportCreate,
     db: Session = Depends(get_db),
-    auth_id: str = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    return sos_service.trigger_sos(db, sos_data, auth_id)
+    return sos_service.trigger_sos(db, sos_data, current_user.clerk_user_id)
