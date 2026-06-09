@@ -147,3 +147,15 @@ class missingPerson(Base):
     policestation = Column(String(100), nullable=False)
     district = Column(String(100), nullable=False)
     upload_document = Column(Text, default='')
+
+class SOSReport(Base):
+    __tablename__ = 'sos_reports'
+    
+    auth_id = Column(String(255), primary_key=True)  # auth_id from Clerk
+    location_address = Column(Text, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    incident_type = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(String(50), default='active')
+    timestamp = Column(DateTime, default=func.now())
