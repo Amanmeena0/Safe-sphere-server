@@ -18,7 +18,9 @@ class S3Storage:
                 file_obj,
                 self.bucket_name,
                 filename,
-                ExtraArgs={'ACL': 'public-read'}
+                ExtraArgs={
+                    'ContentType': file_obj.content_type
+                }
             )
             return f"https://{self.bucket_name}.s3.{os.getenv('AWS_REGION')}.amazonaws.com/{filename}"
         except NoCredentialsError:

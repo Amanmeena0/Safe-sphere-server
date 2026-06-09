@@ -6,6 +6,7 @@ class UserBase(BaseModel):
     auth_id: str
     name: Optional[str] = None
     email: Optional[EmailStr] = None
+    registration_date: Optional[date] = None
 
 class UserCreate(UserBase):
     pass

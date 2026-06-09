@@ -35,7 +35,6 @@ async def check_profile(
         response_data = {
             "exists": True,
             "profile_completed": True,
-            "role": user.role,
             "user_data": {
                 "name": user.name,
                 "email": user.email,
@@ -72,7 +71,6 @@ async def get_my_profile(
         "auth_id": user.auth_id,
         "name": user.name,
         "email": user.email,
-        "role": user.role,
         "registration_date": user.registration_date.isoformat() if user.registration_date else None
     }
     
