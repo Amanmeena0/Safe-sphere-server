@@ -7,9 +7,9 @@ This document provides a comprehensive analysis of the CURRENT SafeSphere backen
 ## 1. Executive Summary
 
 *   **System Overview**: SafeSphere is a public safety platform providing FIR registration, SOS assistance, crime data search, and an AI-powered legal/safety chatbot.
-*   **Core Technologies**: Python 3.x, FastAPI, SQLAlchemy (PostgreSQL), Celery (Redis), LangChain (HuggingFace, ChromaDB), Clerk (Auth).
+*   **Core Technologies**: Python 3.x, FastAPI, SQLAlchemy (PostgreSQL), Celery (Redis), LangChain (HuggingFace, ChromaDB), Clerk (Auth), AWS S3 (Storage).
 *   **Architectural Style**: Clean MVC (Model-View-Controller) with explicit Service and Repository layers.
-*   **Main Responsibilities**: User management, FIR report ingestion, geospatial safety data retrieval, and RAG-based AI assistance.
+*   **Main Responsibilities**: User management (Clerk Sync), FIR report ingestion, geospatial safety data retrieval, SOS reporting with geolocation, and RAG-based AI assistance.
 *   **Major Modules**: `app/api/routes` (Controllers), `app/services`, `app/repositories`, `app/bot` (AI Subsystem), `app/models`, `app/schemas`.
 *   **Maturity Level**: Production-Ready Base. Core architectural smells have been resolved through refactoring and hardening.
 *   **Scalability Assessment**: Highly scalable horizontally due to stateless FastAPI design, asynchronous task offloading via Celery, and in-memory caching for geospatial data.
@@ -72,25 +72,26 @@ sequenceDiagram
 | **Bot** | `app/api/routes/bot.py` | `/generate`, `/status/{id}` | `generate_answer_task`, `get_current_user` |
 | **FIR** | `app/api/routes/fir.py` | `/lost-item`, `/cyber-crime`, `/rape-case`, etc. | `FIRService`, `get_db`, `get_current_user` |
 | **Profile** | `app/api/routes/profile.py` | `/register`, `/check`, `/me`, `/my-firs` | `UserService`, `get_db`, `get_current_user` |
-| **SOS** | `app/api/routes/sos.py` | `/nearest-police-stations`, `/crime-data` | `SOSService` (Cached) |
+| **SOS** | `app/api/routes/sos.py` | `/nearest-police-stations`, `/crime-data`, `/trigger` | `SOSService`, `get_current_user` |
 | **Search** | `app/api/routes/search.py` | `/search` | `CrimeService`, `get_db` |
 
 ### Services
 *   **FIRService**: Orchestrates FIR registration across multiple types (Lost Item, Cyber Crime, etc.).
-*   **UserService**: Handles user registration, profile retrieval, and updates.
-*   **SOSService**: Manages geospatial data with **in-memory caching** to optimize performance.
+*   **UserService**: Handles user registration, profile retrieval, and updates with Clerk synchronization.
+*   **SOSService**: Manages geospatial data with **in-memory caching** and handles SOS emergency triggers.
 *   **CrimeService**: Provides abstracted search capabilities for crime data.
 *   **Bot Tasks**: `generate_answer_task` (Celery) acts as the service for the AI subsystem.
 
 ### Repositories
-*   **FIRRepository**: Generic logic to save various FIR SQLAlchemy objects.
-*   **UserRepository**: Retrieves/saves `User` objects by `auth_id`.
+*   **FIRRepository**: Generic logic to save various FIR SQLAlchemy objects linked via `clerk_user_id`.
+*   **UserRepository**: Retrieves/saves `User` objects by `clerk_user_id`.
 *   **CrimeRepository**: Encapsulates SQL-based search for historical crime data.
 *   **BaseRepository**: Provides standard CRUD (Get, Create, Update, Delete).
 
 ### Models (SQLAlchemy)
-*   **User**: `id`, `auth_id`, `name`, `email`, `phone`, `role`, `status`, `registration_date` (auto-populated).
-*   **LostItem**, **cyberCrime**, **rapecase**, **domesticForm**, **theftEfir**, **mvTheft**, **missingPerson**: Detailed fields for specific report types.
+*   **User**: `id` (UUID), `clerk_user_id` (Unique), `name`, `email`, `first_name`, `last_name`, `status`, `registration_date`.
+*   **SOSReport**: `id`, `clerk_user_id`, `location_address`, `latitude`, `longitude`, `incident_type`, `status`, `timestamp`.
+*   **FIR Models**: `LostItem`, `cyberCrime`, `rapecase`, `domesticForm`, `theftEfir`, `mvTheft`, `missingPerson` (all linked via `clerk_user_id`).
 
 ---
 
@@ -103,7 +104,7 @@ sequenceDiagram
 *   **app/models/**: Database schema definitions.
 *   **app/schemas/**: Pydantic models for request/response validation.
 *   **app/core/**: Global configuration (`config.py`).
-*   **app/utils/**: Shared utilities (Celery, date utils, error helpers).
+*   **app/utils/**: Shared utilities (Celery, date utils, error helpers, and **S3 storage**).
 *   **app/bot/**: RAG logic, vector store management, and LLM integration.
 
 ---
@@ -131,9 +132,10 @@ sequenceDiagram
 *   **Transaction Management**: Handled in Repositories (explicit `db.commit()`).
 
 ### Table Inventory (Selected)
-*   `users`: `auth_id` (Unique), `name`, `email`, `registration_date`.
-*   `lost_items`: `user_auth_id` (FK-like string), `item_name`, `loss_datetime`.
-*   `cyber_crimes`: `crimeCategory`, `platform`, `IpAddress`.
+*   `users`: `id` (UUID), `clerk_user_id` (Unique), `name`, `email`, `registration_date`.
+*   `sos_reports`: `id` (UUID), `clerk_user_id`, `latitude`, `longitude`, `incident_type`, `timestamp`.
+*   `lost_items`: `clerk_user_id` (FK), `item_name`, `loss_datetime`.
+*   `cyber_crimes`: `clerk_user_id` (FK), `crimeCategory`, `platform`.
 
 ---
 
@@ -143,9 +145,10 @@ sequenceDiagram
 *   **Mechanism**: JWT Verification.
 *   **Flow**:
     1.  Client sends `Authorization: Bearer <token>`.
-    2.  `get_current_user` retrieves Clerk's JWKS.
-    3.  `PyJWT` validates signature and expiration.
-    4.  `sub` (Auth ID) is extracted and passed to the router.
+    2.  `get_current_user` retrieves Clerk's JWKS and validates the JWT.
+    3.  `sub` (Clerk User ID) is extracted.
+    4.  **Auto-Sync**: `UserService` checks if user exists locally; if not, it fetches profile data from Clerk and creates a local record.
+    5.  The full `User` model is returned to the router.
 
 ---
 
@@ -174,6 +177,7 @@ sequenceDiagram
 
 *   **Clerk**: Identity management and JWT issuance.
 *   **HuggingFace**: Hosting for LLM (Mistral) and Embeddings API.
+*   **AWS S3**: Secure storage for FIR attachments and evidence.
 *   **ChromaDB**: Local vector database for RAG.
 *   **PostgreSQL**: Primary persistent storage.
 
@@ -200,6 +204,7 @@ sequenceDiagram
 | POST | `/api/fir/lost-item` | JWT | `FIRService.register_lost_item` |
 | POST | `/api/bot/generate` | JWT | `generate_answer_task` |
 | GET | `/api/profile/me` | JWT | `UserService.get_profile` |
+| POST | `/api/sos/trigger` | JWT | `SOSService.trigger_sos` |
 | GET | `/api/sos/nearest-police-stations` | No | `SOSService.get_nearest_police_stations` |
 
 ---
@@ -231,10 +236,12 @@ sequenceDiagram
 
 ## 18. Architectural Improvements (Completed)
 
-1.  **Resolved Model-Schema Mismatch**: `User` model now includes all profile fields and `registration_date`.
-2.  **Decoupled Search Logic**: Raw SQL moved from controller to `CrimeRepository`.
-3.  **Optimized Data Loading**: `SOSService` now uses in-memory caching for GeoJSON files.
-4.  **Secured AI Bot**: Added authentication requirement to bot endpoints.
+1.  **Migrated to Clerk User IDs**: All data models now use `clerk_user_id` for ownership, replacing legacy integer IDs.
+2.  **Implemented Auto-Sync**: The backend now automatically synchronizes user profiles with Clerk during authentication.
+3.  **Real-time SOS Reporting**: Added emergency trigger endpoint with geolocation support and persistence.
+4.  **Optimized Data Loading**: `SOSService` now uses in-memory caching for GeoJSON files.
+5.  **Hardened AI Bot**: Added JWT authentication requirement to all AI interaction endpoints.
+6.  **S3 Integration**: Migrated file uploads to AWS S3 with proper content-type handling.
 
 ---
 
