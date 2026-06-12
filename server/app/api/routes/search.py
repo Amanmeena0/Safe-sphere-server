@@ -6,7 +6,7 @@ from typing import Optional
 
 router = APIRouter()
 
-@router.get("/search")
+@router.get("")
 async def search(
     state_ut: Optional[str] = None,
     district: Optional[str] = None,
