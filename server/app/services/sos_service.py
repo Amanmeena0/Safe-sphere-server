@@ -96,7 +96,7 @@ class SOSService:
             db.refresh(db_sos)
             
             # Log the receipt of SOS signal
-            print(f"SOS Triggered by {auth_id} at {db_sos.timestamp}")
+            print(f"SOS Triggered by {clerk_user_id} at {db_sos.timestamp}")
             
             return db_sos
         except Exception as e:
