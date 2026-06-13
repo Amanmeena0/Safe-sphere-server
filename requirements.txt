@@ -1,0 +1,49 @@
+# Core Flask Frameworks
+Flask
+flask-bcrypt
+flask-cors
+flask-sqlalchemy
+
+# Database
+SQLAlchemy
+psycopg2-binary
+
+# Environment & Configuration
+python-dotenv
+pydantic-settings
+
+# LLM & RAG (AI Bot)
+langchain
+huggingface-hub
+langchain-community
+langchain-huggingface
+chromadb
+
+# Geospatial
+geopy
+# HTTP & Networking
+requests
+
+# Utilities
+python-dateutil
+pytz
+pydantic[email]
+PyJWT
+cryptography
+boto3
+celery
+redis
+clerk-sdk-python
+
+# Optional: For production server
+gunicorn==21.2.0
+python-multipart==0.0.6
+
+fastapi
+uvicorn
+alembic
+
+# Testing
+pytest
+pytest-mock
+httpx

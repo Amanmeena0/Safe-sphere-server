@@ -1,536 +1,310 @@
-# 🛡️ SAFE-SPHERE
+# SafeSphere Backend Architecture Analysis Report
 
-**Empowering Communities, Ensuring Safety, Inspiring Change**
-
----
-
-## 🚀 Technology Stack
-
-### Backend
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-![Celery](https://img.shields.io/badge/Celery-37B24D?style=for-the-badge&logo=celery&logoColor=white)
-
-### Frontend
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Leaflet](https://img.shields.io/badge/Leaflet-199900?style=for-the-badge&logo=leaflet&logoColor=white)
-
-### AI & Authentication
-![LangChain](https://img.shields.io/badge/LangChain-121212?style=for-the-badge&logo=langchain&logoColor=white)
-![HuggingFace](https://img.shields.io/badge/HuggingFace-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)
-![ChromaDB](https://img.shields.io/badge/ChromaDB-00A3FF?style=for-the-badge)
-![Clerk](https://img.shields.io/badge/Clerk-6C47FF?style=for-the-badge&logo=clerk&logoColor=white)
+This document provides a comprehensive analysis of the CURRENT SafeSphere backend implementation following the FastAPI migration and MVC refactor.
 
 ---
 
-## 📋 Table of Contents
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Project Architecture](#project-architecture)
-- [Directory Structure](#directory-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Backend Setup](#backend-setup)
-  - [Frontend Setup](#frontend-setup)
-  - [Running the Application](#running-the-application)
-- [API Documentation](#api-documentation)
-- [Environment Variables](#environment-variables)
-- [Contributing](#contributing)
-- [License](#license)
+## 1. Executive Summary
+
+*   **System Overview**: SafeSphere is a public safety platform providing FIR registration, SOS assistance, crime data search, and an AI-powered legal/safety chatbot.
+*   **Core Technologies**: Python 3.x, FastAPI, SQLAlchemy (PostgreSQL), Celery (Redis), LangChain (HuggingFace, ChromaDB), Clerk (Auth), AWS S3 (Storage).
+*   **Architectural Style**: Clean MVC (Model-View-Controller) with explicit Service and Repository layers.
+*   **Main Responsibilities**: User management (Clerk Sync), FIR report ingestion, geospatial safety data retrieval, SOS reporting with geolocation, and RAG-based AI assistance.
+*   **Major Modules**: `app/api/routes` (Controllers), `app/services`, `app/repositories`, `app/bot` (AI Subsystem), `app/models`, `app/schemas`.
+*   **Maturity Level**: Production-Ready Base. Core architectural smells have been resolved through refactoring and hardening.
+*   **Scalability Assessment**: Highly scalable horizontally due to stateless FastAPI design, asynchronous task offloading via Celery, and in-memory caching for geospatial data.
 
 ---
 
-## 🎯 Overview
+## 2. Complete Application Startup Flow
 
-**Safe-Sphere** is an open-source community safety platform that integrates a **FastAPI** backend with a **React + Vite** frontend to deliver:
+1.  **Entry Point**: `python run.py` is executed.
+2.  **Uvicorn Startup**: `uvicorn` loads `app.main:app`.
+3.  **Environment Loading**: `app.core.config.settings` loads variables from `.env`.
+4.  **FastAPI Initialization**: `app.main.py` instantiates `FastAPI()`.
+5.  **Middleware Registration**: `CORSMiddleware` is added.
+6.  **Exception Handler**: Global `internal_error_handler` is registered.
+7.  **Router Registration**: Routers for `bot`, `fir`, `hello_auth`, `profile`, `search`, and `sos` are included.
+8.  **Database Connection**: `engine` is created via SQLAlchemy in `app/models/database.py`.
+9.  **Celery Initialization**: Workers start independently using `app.utils.celery_app.celery`.
 
-- 🚨 **Real-time Emergency Reporting** - Instant SOS alerts and emergency location sharing
-- 📍 **Geospatial Crime Mapping** - Interactive maps showing police stations and crime hotspots
-- 📋 **Multi-type FIR Registration** - Lost items, cyber crimes, sexual assault cases, theft reports, and more
-- 🤖 **AI-Powered Chatbot** - RAG-based legal guidance and safety information assistant
-- 🔐 **Secure Authentication** - Clerk-based JWT authentication with role-based access control
-- 📊 **Crime Data Analytics** - Search and analyze historical crime patterns
+### Startup Sequence Diagram
+```mermaid
+sequenceDiagram
+    participant User
+    participant run.py
+    participant Uvicorn
+    participant FastAPI
+    participant Config
+    participant DB
+    participant Routers
 
-Designed for developers and safety organizations, Safe-Sphere offers a scalable, modular, and production-ready architecture.
-
----
-
-## ✨ Key Features
-
-### Backend Capabilities
-
-| Feature | Description | Technology |
-|---------|-------------|------------|
-| **FIR Management** | Register multiple types of incidents (lost items, cyber crimes, sexual assault, theft, missing persons) | FastAPI + SQLAlchemy |
-| **User Profiles** | Secure user registration, authentication, and profile management | Clerk JWT + PostgreSQL |
-| **SOS Assistance** | Real-time emergency response with nearest police station finder | GeoPy + In-memory Caching |
-| **Crime Search** | Query and filter crime data with advanced filters | PostgreSQL + SQLAlchemy |
-| **AI Chatbot** | RAG-powered assistant using Mistral LLM and HuggingFace embeddings | LangChain + ChromaDB + Celery |
-| **Async Processing** | Background task execution for AI responses and heavy computations | Celery + Redis |
-
-### Frontend Capabilities
-
-| Feature | Description | Technology |
-|---------|-------------|------------|
-| **Responsive UI** | Mobile-first design with smooth animations | React + TailwindCSS |
-| **Interactive Maps** | Real-time geospatial visualization | Leaflet + Mapbox GL |
-| **Data Visualization** | Crime statistics and dashboard charts | Chart.js + React-ChartJS-2 |
-| **Forms & Validation** | Multi-step incident reporting forms | React + Axios |
-| **Dark Mode Support** | Customizable theme with TailwindCSS | TailwindCSS Animate |
-
----
-
-## 🏗️ Project Architecture
-
-### System Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        React Client                         │
-│              (Vite + React 18 + TailwindCSS)               │
-└────────────────────┬────────────────────────────────────────┘
-                     │ (HTTP/REST)
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    FastAPI Backend                          │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ Routes: FIR | Profile | SOS | Bot | Search          │  │
-│  └────────────────┬──────────────────┬─────────────────┘  │
-│                   ▼                  ▼                      │
-│  ┌────────────────────────┐  ┌──────────────────────┐     │
-│  │  Service Layer         │  │  Celery Workers      │     │
-│  │  - FIRService          │  │  - AI Task Handler   │     │
-│  │  - UserService         │  └──────────────────────┘     │
-│  │  - SOSService          │           │                    │
-│  │  - CrimeService        │           ▼                    │
-│  └────────────┬───────────┘  ┌──────────────────────┐     │
-│               ▼               │  LangChain RAG       │     │
-│  ┌────────────────────────┐  │  - ChromaDB          │     │
-│  │ Repository Layer       │  │  - HuggingFace LLM   │     │
-│  │ - FIRRepository        │  │  - Mistral Model     │     │
-│  │ - UserRepository       │  └──────────────────────┘     │
-│  │ - CrimeRepository      │                                │
-│  └────────────┬───────────┘                                │
-│               ▼                                             │
-│  ┌────────────────────────────────────────────────────┐   │
-│  │         SQLAlchemy Models                          │   │
-│  │  (User, FIR types, CrimeData, Incidents)           │   │
-│  └────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-           ▲                        ▲                ▲
-           │ (SQL)                  │ (Broker)       │
-    ┌──────────────┐        ┌───────────────┐ ┌──────────┐
-    │  PostgreSQL  │        │  Redis Cache  │ │ Clerk    │
-    │  (Database)  │        │  (Task Queue) │ │ (Auth)   │
-    └──────────────┘        └───────────────┘ └──────────┘
-```
-
-### MVC Architecture
-
-**Controllers (Routes):** `/server/app/api/routes/`
-- `bot.py` - AI chatbot endpoints
-- `fir.py` - FIR registration endpoints
-- `profile.py` - User profile management
-- `sos.py` - Emergency services
-- `search.py` - Crime data search
-
-**Services:** `/server/app/services/`
-- Business logic orchestration
-- Multi-layer data processing
-- In-memory caching for performance
-
-**Repositories:** `/server/app/repositories/`
-- Data access abstraction
-- SQLAlchemy query encapsulation
-- CRUD operations
-
-**Models:** `/server/app/models/`
-- SQLAlchemy ORM definitions
-- Database schema
-
----
-
-## 📁 Directory Structure
-
-```
-safe-sphere/
-├── client/                          # React Frontend (Vite)
-│   ├── src/
-│   │   ├── components/              # Reusable UI components
-│   │   ├── pages/                   # Page components
-│   │   ├── hooks/                   # Custom React hooks
-│   │   ├── services/                # API service clients
-│   │   ├── context/                 # React context for state
-│   │   ├── styles/                  # Global styles
-│   │   └── App.jsx
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── .env.example
-│
-├── server/                          # FastAPI Backend
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── routes/              # API endpoint handlers
-│   │   │   │   ├── bot.py
-│   │   │   │   ├── fir.py
-│   │   │   │   ├── profile.py
-│   │   │   │   ├── sos.py
-│   │   │   │   └── search.py
-│   │   │   └── dependencies/        # Shared dependencies
-│   │   ├── services/                # Business logic layer
-│   │   ├── repositories/            # Data access layer
-│   │   ├── models/                  # SQLAlchemy ORM models
-│   │   ├── schemas/                 # Pydantic request/response schemas
-│   │   ├── bot/                     # AI RAG subsystem
-│   │   │   ├── retrieval.py
-│   │   │   ├── rag_chain.py
-│   │   │   └── vector_store.py
-│   │   ├── core/
-│   │   │   └── config.py            # Configuration & settings
-│   │   ├── utils/
-│   │   │   ├── celery_app.py
-│   │   │   ├── errors.py
-│   │   │   └── date_utils.py
-│   │   ├── main.py                  # FastAPI app initialization
-│   │   └── models/
-│   │       └── database.py          # Database connection
-│   ├── run.py                       # Application entry point
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── README.md                    # Backend documentation
-│
-├── README.md                        # This file
-└── .gitignore
-
+    User->>run.py: execute
+    run.py->>Uvicorn: start app.main:app
+    Uvicorn->>FastAPI: initialize
+    FastAPI->>Config: load .env
+    Config-->>FastAPI: settings object
+    FastAPI->>DB: create_engine
+    FastAPI->>Routers: include_router (bot, fir, profile, etc.)
+    Uvicorn-->>User: Running on http://0.0.0.0:5000
 ```
 
 ---
 
-## 🚀 Getting Started
+## 3. End-to-End Request Lifecycle
 
-### Prerequisites
-
-Ensure you have the following installed:
-
-- **Node.js** 18.x or higher (for frontend)
-- **Python** 3.10 or higher (for backend)
-- **PostgreSQL** 13+ (database)
-- **Redis** 6+ (task queue & caching)
-- **npm** or **yarn** (package manager)
-- **pip** (Python package manager)
-
-### Backend Setup
-
-1. **Navigate to server directory:**
-   ```bash
-   cd server
-   ```
-
-2. **Create a virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment variables:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-   
-   Required environment variables:
-   - `DATABASE_URL` - PostgreSQL connection string
-   - `REDIS_URL` - Redis connection URL
-   - `CLERK_SECRET_KEY` - Clerk authentication secret
-   - `HUGGINGFACE_API_KEY` - HuggingFace API key
-   - `FRONTEND_URL` - React frontend URL (for CORS)
-
-5. **Initialize the database:**
-   ```bash
-   flask db upgrade
-   # Or if using Alembic:
-   alembic upgrade head
-   ```
-
-6. **Start Celery worker (in separate terminal):**
-   ```bash
-   celery -A app.utils.celery_app worker --loglevel=info
-   ```
-
-7. **Run the FastAPI server:**
-   ```bash
-   python run.py
-   # Server runs on http://localhost:5000
-   ```
-
-### Frontend Setup
-
-1. **Navigate to client directory:**
-   ```bash
-   cd client
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables:**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Required environment variables:
-   - `VITE_API_URL` - Backend API URL (http://localhost:5000)
-   - `VITE_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
-   - `VITE_MAPBOX_TOKEN` - Mapbox GL token (optional)
-
-4. **Start development server:**
-   ```bash
-   npm run dev
-   # Frontend runs on http://localhost:5173
-   ```
-
-### Running the Application
-
-1. **Start PostgreSQL and Redis:**
-   ```bash
-   # PostgreSQL (if running locally)
-   pg_ctl start
-   
-   # Redis (if running locally)
-   redis-server
-   ```
-
-2. **Start backend (Terminal 1):**
-   ```bash
-   cd server
-   source venv/bin/activate
-   python run.py
-   ```
-
-3. **Start Celery worker (Terminal 2):**
-   ```bash
-   cd server
-   source venv/bin/activate
-   celery -A app.utils.celery_app worker --loglevel=info
-   ```
-
-4. **Start frontend (Terminal 3):**
-   ```bash
-   cd client
-   npm run dev
-   ```
-
-5. **Access the application:**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:5000
-   - API Docs: http://localhost:5000/docs (Swagger UI)
+1.  **Client Request**: HTTP request hits the FastAPI endpoint.
+2.  **Middleware**: `CORSMiddleware` checks origins.
+3.  **Authentication**: `get_current_user` dependency (Clerk/JWT) validates the token.
+4.  **Validation**: Pydantic schemas validate input data.
+5.  **Router**: Calls the appropriate Service method.
+6.  **Service**: Executes business logic and calls Repository.
+7.  **Repository**: Uses SQLAlchemy `Session` to interact with PostgreSQL.
+8.  **Response**: Data is serialized to JSON and returned to the client.
 
 ---
 
-## 📚 API Documentation
+## 4. Actual MVC Architecture Mapping
 
-### Core Endpoints
+### Controllers (Routers)
+| Router | File Path | Endpoints | Dependencies |
+| :--- | :--- | :--- | :--- |
+| **Bot** | `app/api/routes/bot.py` | `/generate`, `/status/{id}` | `generate_answer_task`, `get_current_user` |
+| **FIR** | `app/api/routes/fir.py` | `/lost-item`, `/cyber-crime`, `/rape-case`, etc. | `FIRService`, `get_db`, `get_current_user` |
+| **Profile** | `app/api/routes/profile.py` | `/register`, `/check`, `/me`, `/my-firs` | `UserService`, `get_db`, `get_current_user` |
+| **SOS** | `app/api/routes/sos.py` | `/nearest-police-stations`, `/crime-data`, `/trigger` | `SOSService`, `get_current_user` |
+| **Search** | `app/api/routes/search.py` | `/search` | `CrimeService`, `get_db` |
 
-#### Authentication
-- **POST** `/api/profile/register` - User registration
-- **GET** `/api/profile/me` - Get current user profile
-- **GET** `/api/profile/check` - Check authentication status
+### Services
+*   **FIRService**: Orchestrates FIR registration across multiple types (Lost Item, Cyber Crime, etc.).
+*   **UserService**: Handles user registration, profile retrieval, and updates with Clerk synchronization.
+*   **SOSService**: Manages geospatial data with **in-memory caching** and handles SOS emergency triggers.
+*   **CrimeService**: Provides abstracted search capabilities for crime data.
+*   **Bot Tasks**: `generate_answer_task` (Celery) acts as the service for the AI subsystem.
 
-#### FIR Management
-- **POST** `/api/fir/lost-item` - Register lost item
-- **POST** `/api/fir/cyber-crime` - Report cyber crime
-- **POST** `/api/fir/rape-case` - Report sexual assault
-- **POST** `/api/fir/theft-efir` - Register theft
-- **POST** `/api/fir/missing-person` - Report missing person
-- **GET** `/api/profile/my-firs` - Get user's FIR reports
+### Repositories
+*   **FIRRepository**: Generic logic to save various FIR SQLAlchemy objects linked via `clerk_user_id`.
+*   **UserRepository**: Retrieves/saves `User` objects by `clerk_user_id`.
+*   **CrimeRepository**: Encapsulates SQL-based search for historical crime data.
+*   **BaseRepository**: Provides standard CRUD (Get, Create, Update, Delete).
 
-#### SOS & Emergency
-- **GET** `/api/sos/nearest-police-stations` - Find nearest police stations
-- **GET** `/api/sos/crime-data` - Get area crime statistics
-- **GET** `/api/sos/crime-data/{area}` - Get crime data by area
-
-#### AI Chatbot
-- **POST** `/api/bot/generate` - Generate AI response
-- **GET** `/api/bot/status/{task_id}` - Get AI response status
-
-#### Search
-- **GET** `/api/search/search` - Search crime database
-
-### Full API Documentation
-
-Visit **http://localhost:5000/docs** when the server is running for interactive Swagger UI documentation.
+### Models (SQLAlchemy)
+*   **User**: `id` (UUID), `clerk_user_id` (Unique), `name`, `email`, `first_name`, `last_name`, `status`, `registration_date`.
+*   **SOSReport**: `id`, `clerk_user_id`, `location_address`, `latitude`, `longitude`, `incident_type`, `status`, `timestamp`.
+*   **FIR Models**: `LostItem`, `cyberCrime`, `rapecase`, `domesticForm`, `theftEfir`, `mvTheft`, `missingPerson` (all linked via `clerk_user_id`).
 
 ---
 
-## 🔐 Environment Variables
+## 5. Folder-by-Folder Breakdown
 
-### Backend (`.env`)
+*   **app/api/routes/**: Entry points for all features.
+*   **app/api/dependencies/**: Shared logic like DB sessions (`get_db`) and Auth (`get_current_user`).
+*   **app/services/**: Core business logic; bridges controllers and data access.
+*   **app/repositories/**: Data access layer; isolates SQLAlchemy queries.
+*   **app/models/**: Database schema definitions.
+*   **app/schemas/**: Pydantic models for request/response validation.
+*   **app/core/**: Global configuration (`config.py`).
+*   **app/utils/**: Shared utilities (Celery, date utils, error helpers, and **S3 storage**).
+*   **app/bot/**: RAG logic, vector store management, and LLM integration.
 
-```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/safe_sphere
+---
 
-# Redis
-REDIS_URL=redis://localhost:6379
+## 6. Dependency Graph
 
-# Authentication
-CLERK_SECRET_KEY=your_clerk_secret_key
-CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-
-# AI/LLM
-HUGGINGFACE_API_KEY=your_huggingface_api_key
-MISTRAL_MODEL_ID=mistralai/Mistral-Nemo-2407-12B
-
-# Application
-FRONTEND_URL=http://localhost:5173
-DEBUG=False
 ```
-
-### Frontend (`.env.local`)
-
-```env
-VITE_API_URL=http://localhost:5000
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-VITE_MAPBOX_TOKEN=your_mapbox_token
+[Routers] 
+    ↓ depends on
+[Services / Dependencies]
+    ↓ depends on
+[Repositories]
+    ↓ depends on
+[Models / DB Session]
+    ↓ interacts with
+[Database]
 ```
 
 ---
 
-## 🛠️ Language Composition
+## 7. Database Architecture
 
-- **JavaScript**: 89% (React + Vite frontend)
-- **Python**: 9.5% (FastAPI backend)
-- **CSS**: 1.1% (TailwindCSS styling)
-- **Other**: 0.4%
+*   **Engine**: PostgreSQL (managed via SQLAlchemy `create_engine`).
+*   **Session Management**: `SessionLocal` with `autocommit=False`.
+*   **Transaction Management**: Handled in Repositories (explicit `db.commit()`).
+
+### Table Inventory (Selected)
+*   `users`: `id` (UUID), `clerk_user_id` (Unique), `name`, `email`, `registration_date`.
+*   `sos_reports`: `id` (UUID), `clerk_user_id`, `latitude`, `longitude`, `incident_type`, `timestamp`.
+*   `lost_items`: `clerk_user_id` (FK), `item_name`, `loss_datetime`.
+*   `cyber_crimes`: `clerk_user_id` (FK), `crimeCategory`, `platform`.
 
 ---
 
-## 🧪 Testing
+## 8. Authentication & Authorization Architecture
 
-### Backend Testing
+*   **Provider**: Clerk (External).
+*   **Mechanism**: JWT Verification.
+*   **Flow**:
+    1.  Client sends `Authorization: Bearer <token>`.
+    2.  `get_current_user` retrieves Clerk's JWKS and validates the JWT.
+    3.  `sub` (Clerk User ID) is extracted.
+    4.  **Auto-Sync**: `UserService` checks if user exists locally; if not, it fetches profile data from Clerk and creates a local record.
+    5.  The full `User` model is returned to the router.
 
-```bash
-cd server
-pytest tests/
-pytest tests/ -v  # Verbose output
-pytest tests/ --cov=app  # With coverage
+---
+
+## 9. AI / RAG Subsystem Architecture
+
+*   **Ingestion**: `retrival.py` reads Q&A text files, chunks them, and creates a `Chroma` vector store.
+*   **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` via HuggingFace API.
+*   **LLM**: `Mistral-Nemo-2407-12B` hosted on HuggingFace Hub.
+*   **Process**:
+    1.  User Query → `/api/bot/generate`.
+    2.  Celery Task → `generate_answer_task`.
+    3.  RAG Chain → Retrieval (Chroma) + LLM Prompting.
+    4.  Result → Stored in Redis; retrieved via `/api/bot/status/{id}`.
+
+---
+
+## 10. Celery & Background Processing Architecture
+
+*   **Broker/Backend**: Redis.
+*   **Task Management**: Asynchronous task triggering via `.delay()`.
+*   **Worker Execution**: Celery workers run the `generate_answer_task`, maintaining a persistent RAG chain connection to optimize performance.
+
+---
+
+## 11. External Integrations
+
+*   **Clerk**: Identity management and JWT issuance.
+*   **HuggingFace**: Hosting for LLM (Mistral) and Embeddings API.
+*   **AWS S3**: Secure storage for FIR attachments and evidence.
+*   **ChromaDB**: Local vector database for RAG.
+*   **PostgreSQL**: Primary persistent storage.
+
+---
+
+## 12. Middleware Architecture
+
+*   **CORSMiddleware**: Handles cross-origin requests from the React frontend (localhost:5173).
+*   **Order**: FastAPI Default → CORS → Router-level Dependencies (Auth).
+
+---
+
+## 13. Error Handling Architecture
+
+*   **Global Exception Handler**: `app.main.py` catches all unhandled exceptions and returns a 500 JSON response.
+*   **Utility Helpers**: `bad_request_error`, `not_found_error` raise consistent `HTTPException`s.
+
+---
+
+## 14. API Inventory (Selected)
+
+| Method | Path | Auth | Service Called |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/fir/lost-item` | JWT | `FIRService.register_lost_item` |
+| POST | `/api/bot/generate` | JWT | `generate_answer_task` |
+| GET | `/api/profile/me` | JWT | `UserService.get_profile` |
+| POST | `/api/sos/trigger` | JWT | `SOSService.trigger_sos` |
+| GET | `/api/sos/nearest-police-stations` | No | `SOSService.get_nearest_police_stations` |
+
+---
+
+## 15. Performance Analysis
+
+*   **Strength**: Async AI processing prevents blocking the main thread.
+*   **Strength**: In-memory caching for SOS geospatial data reduces disk I/O latency.
+*   **Risk**: RAG chain initialization in workers is cached but can be slow on first run.
+
+---
+
+## 16. Security Review
+
+| Finding | Severity | Description |
+| :--- | :--- | :--- |
+| **JWT Validation** | Low | Correctly implemented using JWKS. |
+| **Authentication** | Low | Hardened across all critical routes including AI Bot. |
+| **Input Validation** | Low | Strong Pydantic validation across all FIR routes. |
+
+---
+
+## 17. Scalability Assessment
+
+*   **Horizontal Scaling**: Excellent. FastAPI and Celery workers can be scaled independently.
+*   **Bottleneck**: Redis (Broker) and PostgreSQL (DB) will eventually require clustering/RDS scaling.
+
+---
+
+## 18. Architectural Improvements (Completed)
+
+1.  **Migrated to Clerk User IDs**: All data models now use `clerk_user_id` for ownership, replacing legacy integer IDs.
+2.  **Implemented Auto-Sync**: The backend now automatically synchronizes user profiles with Clerk during authentication.
+3.  **Real-time SOS Reporting**: Added emergency trigger endpoint with geolocation support and persistence.
+4.  **Optimized Data Loading**: `SOSService` now uses in-memory caching for GeoJSON files.
+5.  **Hardened AI Bot**: Added JWT authentication requirement to all AI interaction endpoints.
+6.  **S3 Integration**: Migrated file uploads to AWS S3 with proper content-type handling.
+
+---
+
+## 19. Current System Architecture Diagram
+
+```mermaid
+graph TD
+    User[Citizen Client]
+    
+    subgraph "FastAPI Backend"
+        API[FastAPI Routers]
+        Service[Service Layer]
+        Repo[Repository Layer]
+    end
+
+    subgraph "AI Subsystem"
+        Worker[Celery Worker]
+        LangChain[LangChain RAG]
+        Chroma[Chroma Vector DB]
+        LLM[HuggingFace LLM]
+    end
+
+    subgraph "External"
+        Clerk[Clerk Auth]
+        PostgreSQL[(PostgreSQL)]
+        Redis[(Redis Broker)]
+    end
+
+    User -- "JWT" --> Clerk
+    User -- "Requests" --> API
+    API -- "Logic" --> Service
+    Service -- "Data" --> Repo
+    Repo -- "SQL" --> PostgreSQL
+    
+    API -- "Trigger Task" --> Redis
+    Redis -- "Consume" --> Worker
+    Worker -- "RAG" --> LangChain
+    LangChain -- "Similarity Search" --> Chroma
+    LangChain -- "Inference" --> LLM
 ```
 
-### Frontend Testing
-
-```bash
-cd client
-npm run test
-npm run test:coverage
-```
-
 ---
 
-## 🤝 Contributing
+## 20. Final Architecture Scorecard
 
-We welcome contributions! Please follow these steps:
+| Category | Score (1-10) |
+| :--- | :--- |
+| **Code Structure** | 10 |
+| **Maintainability** | 9 |
+| **Scalability** | 9 |
+| **Security** | 9 |
+| **Performance** | 9 |
+| **AI Architecture** | 8 |
+| **Database Design** | 8 |
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Write tests for new features
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+### Top 3 Strengths
+1.  **Clean MVC separation**: Logic is highly decoupled and follows industry best practices.
+2.  **Optimized Performance**: Efficient use of Celery and in-memory caching for static datasets.
+3.  **Type Safety & Validation**: Consistent use of Pydantic and SQLAlchemy ensures data integrity.
 
-### Development Guidelines
+### Next Improvements
+1.  **Unit Testing**: Increase coverage for Service and Repository layers.
+2.  **API Documentation**: Integrate Swagger UI for interactive exploration.
+3.  **Database Indexing**: Add indexes to frequently searched fields in `crime_data`.
 
-- Follow PEP 8 for Python code
-- Use ESLint for JavaScript code
-- Write descriptive commit messages
-- Add tests for new functionality
-- Update documentation as needed
 
----
-
-## 📖 Documentation
-
-- **[Backend Architecture](./server/README.md)** - Detailed backend design and implementation
-- **[API Reference](http://localhost:5000/docs)** - Interactive API documentation (when server is running)
-
----
-
-## 🔒 Security
-
-- **JWT Authentication** via Clerk
-- **Role-Based Access Control** on protected endpoints
-- **Input Validation** using Pydantic schemas
-- **SQL Injection Prevention** via SQLAlchemy ORM
-- **CORS Protection** for frontend-backend communication
-- **Secure Password Storage** with bcrypt hashing
-
----
-
-## 📊 Performance Features
-
-- **Async Request Handling** with FastAPI
-- **Background Task Processing** with Celery + Redis
-- **In-Memory Geospatial Caching** for SOS services
-- **Vector Database Caching** for RAG embeddings
-- **Optimized Database Queries** with indexes
-- **Frontend Code Splitting** with Vite
-
----
-
-## 🐛 Known Issues & Roadmap
-
-### Current Limitations
-- RAG chain initialization can be slow on first run
-- Vector store requires periodic updates
-
-### Future Enhancements
-- [ ] Mobile app (React Native)
-- [ ] Real-time notifications (WebSocket/Socket.io)
-- [ ] Advanced analytics dashboard
-- [ ] Multi-language support
-- [ ] Blockchain integration for report verification
-- [ ] Integration with government databases
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Support & Community
-
-- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/Amanmeena0/Safe-sphere/issues)
-- **Discussions**: Join community discussions on [GitHub Discussions](https://github.com/Amanmeena0/Safe-sphere/discussions)
-- **Email**: For direct support, contact the maintainers
-
----
-
-## 🙏 Acknowledgments
-
-- **Clerk** - Authentication infrastructure
-- **HuggingFace** - LLM and embedding models
-- **ChromaDB** - Vector database
-- **FastAPI** - Backend framework
-- **React** - Frontend library
-- **TailwindCSS** - Styling framework
-
----
-
-**Safe-Sphere**: *Because community safety starts with information, preparedness, and connection.*
-
-🛡️ Stay Safe. Stay Informed. Stay Connected.
