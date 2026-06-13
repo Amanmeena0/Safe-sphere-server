@@ -4,7 +4,7 @@ import json
 from app.api.dependencies import get_db, get_current_user
 from app.services.user_service import UserService
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
-from app.models.models import User, cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft
+from app.models.models import User, cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft, SOSReport
 from app.utils.redis_client import get_redis
 
 router = APIRouter()
@@ -83,7 +83,8 @@ async def get_my_firs(
             "missing_persons": serialize(db.query(missingPerson).filter(missingPerson.clerk_user_id == user_id).all()),
             "domestic_forms": serialize(db.query(domesticForm).filter(domesticForm.clerk_user_id == user_id).all()),
             "rape_cases": serialize(db.query(rapecase).filter(rapecase.clerk_user_id == user_id).all()),
-            "mv_thefts": serialize(db.query(mvTheft).filter(mvTheft.clerk_user_id == user_id).all())
+            "mv_thefts": serialize(db.query(mvTheft).filter(mvTheft.clerk_user_id == user_id).all()),
+            "sos_reports": serialize(db.query(SOSReport).filter(SOSReport.clerk_user_id == user_id).all())
         }
 
         return data
