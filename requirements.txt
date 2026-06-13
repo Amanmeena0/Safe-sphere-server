@@ -10,7 +10,9 @@ psycopg2-binary
 
 # Environment & Configuration
 python-dotenv
-pydantic-settings
+pydantic[email]>=2.7.0
+pydantic-settings>=2.4.0
+PyYAML>=6.0.1
 
 # LLM & RAG (AI Bot)
 langchain
@@ -27,13 +29,11 @@ requests
 # Utilities
 python-dateutil
 pytz
-pydantic[email]
 PyJWT
 cryptography
 boto3
 celery
 redis
-clerk-sdk-python
 
 # Optional: For production server
 gunicorn==21.2.0
