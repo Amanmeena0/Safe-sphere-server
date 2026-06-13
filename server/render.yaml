@@ -1,0 +1,6 @@
+services: 
+  - type : web
+    name : safe-sphere-server
+    runtime : python
+    build_command : pip install -r requirements.txt
+    start_command : uvicorn main:app --host
