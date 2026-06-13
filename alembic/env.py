@@ -19,7 +19,7 @@ from app.models.models import User, LostItem, cyberCrime, rapecase, domesticForm
 config = context.config
 
 # Set the sqlalchemy.url from our settings (escaped for configparser)
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
+config.set_main_option("sqlalchemy.url", settings.sqlalchemy_database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
@@ -44,7 +44,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     # Use the URL from settings instead of alembic.ini
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    configuration["sqlalchemy.url"] = settings.sqlalchemy_database_url
     
     connectable = engine_from_config(
         configuration,

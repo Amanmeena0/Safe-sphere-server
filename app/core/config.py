@@ -6,6 +6,14 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        if self.DATABASE_URL.startswith("postgres://"):
+            return self.DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+        elif self.DATABASE_URL.startswith("postgresql://"):
+             return self.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return self.DATABASE_URL
+    
     REDIS_URL: str = "redis://localhost:6379/0"
     CELERY_BROKER_URL: Optional[str] = None
     CELERY_RESULT_BACKEND: Optional[str] = None
