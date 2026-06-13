@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     CLERK_SECRET_KEY: Optional[str] = None
     CLERK_JWKS_URL: Optional[str] = None
 
+    BACKEND_CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://safe-sphere-ui.vercel.app"
+    ]
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
