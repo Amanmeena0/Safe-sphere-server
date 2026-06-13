@@ -6,7 +6,8 @@ def make_celery(app_name=__name__):
     return Celery(
         app_name,
         backend=redis_url,
-        broker=redis_url
+        broker=redis_url,
+        include=['app.bot.tasks']
     )
 
 celery = make_celery()
