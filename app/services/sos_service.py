@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from fastapi import HTTPException
 from geopy.distance import geodesic
 from typing import List, Dict
@@ -12,30 +13,48 @@ class SOSService:
     _CRIME_CLUSTERS_CACHE = None
 
     def __init__(self):
-        # Setup base directory for data
-        # __file__ is app/services/sos_service.py
-        # app_dir is app/
+        # Setup base directory for local fallback
         self.APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # root_dir is the project root
         self.ROOT_DIR = os.path.dirname(self.APP_DIR)
-        self.SOS_DATA_DIR = os.path.join(self.ROOT_DIR, "app", "DataOfEverything") # Based on tree: app/DataOfEverything
+        self.SOS_DATA_DIR = os.path.join(self.ROOT_DIR, "store")
+        
+        # Remote URLs from environment (optional)
+        self.POLICE_STATIONS_URL = os.getenv("POLICE_STATIONS_URL")
+        self.CRIME_CLUSTERS_URL = os.getenv("CRIME_CLUSTERS_URL")
+
+    def _fetch_data(self, url: str, local_filename: str):
+        """Helper to fetch data from URL or local file."""
+        # Try remote first if URL exists
+        if url:
+            try:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                return response.json()
+            except Exception as e:
+                print(f"Warning: Failed to fetch remote data from {url}: {e}")
+        
+        # Fallback to local file
+        local_path = os.path.join(self.SOS_DATA_DIR, local_filename)
+        if not os.path.exists(local_path):
+            raise HTTPException(status_code=500, detail=f"Data file {local_filename} not found locally or remotely")
+            
+        with open(local_path, "r", encoding="utf-8") as file:
+            return json.load(file)
 
     def _get_police_stations(self):
         if SOSService._POLICE_STATIONS_CACHE is None:
-            data_path = os.path.join(self.SOS_DATA_DIR, "INDIA_POLICE_STATIONS.geojson")
-            if not os.path.exists(data_path):
-                raise HTTPException(status_code=500, detail="Police station data not found")
-            with open(data_path, "r", encoding="utf-8") as file:
-                SOSService._POLICE_STATIONS_CACHE = json.load(file)
+            SOSService._POLICE_STATIONS_CACHE = self._fetch_data(
+                self.POLICE_STATIONS_URL, 
+                "INDIA_POLICE_STATIONS.geojson"
+            )
         return SOSService._POLICE_STATIONS_CACHE
 
     def _get_crime_clusters(self):
         if SOSService._CRIME_CLUSTERS_CACHE is None:
-            json_path = os.path.join(self.SOS_DATA_DIR, "crime_clusters.geojson")
-            if not os.path.exists(json_path):
-                raise HTTPException(status_code=500, detail="Crime data not found")
-            with open(json_path, encoding="utf-8") as f:
-                SOSService._CRIME_CLUSTERS_CACHE = json.load(f)
+            SOSService._CRIME_CLUSTERS_CACHE = self._fetch_data(
+                self.CRIME_CLUSTERS_URL, 
+                "crime_clusters.geojson"
+            )
         return SOSService._CRIME_CLUSTERS_CACHE
 
     def get_nearest_police_stations(self, lat: float, lon: float, top: int = 3) -> List[Dict]:
