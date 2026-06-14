@@ -1,5 +1,4 @@
-from langchain_community.llms import HuggingFaceEndpoint
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+from langchain_huggingface import HuggingFaceEndpoint, HuggingFaceEndpointEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_classic.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
@@ -17,9 +16,9 @@ if not api_key:
 
 # Load Chroma vector store
 def load_vector_store():
-    embeddings = HuggingFaceInferenceAPIEmbeddings(
-        api_key=api_key,
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    embeddings = HuggingFaceEndpointEmbeddings(
+        huggingfacehub_api_token=api_key,
+        model="sentence-transformers/all-MiniLM-L6-v2"
     )
     # Use absolute path to ensure vector store is found
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -48,23 +47,26 @@ def build_rag_chain():
     prompt_template = PromptTemplate(
         input_variables=["context", "question"],
         template="""
-You are a helpful assistant answering questions based on the following context:
-If the context is not sufficient, you can answer based on your general knowledge.
-IF the context about certain topics is not available, you would say "I don't have information on that topic."
-and you should not make up information.
+You are a helpful assistant specialized in public safety and law.
+Use the following context to answer the user's question.
+If the context doesn't contain the answer, say "I don't have enough information on this topic."
+Keep your answer concise and focused. STOP after providing the answer.
+
+Context:
 {context}
 
 Question: {question}
-Answer:
-"""
+Answer:"""
     )
 
-    # Use the user-provided model
+    # Use a standard model compatible with serverless inference
     model = HuggingFaceEndpoint(
-        repo_id="mradermacher/Mistral-Nemo-2407-12B-Thinking-Claude-Gemini-GPT5.2-Uncensored-HERETIC-GGUF",
+        repo_id="mistralai/Mistral-7B-v0.1",
         huggingfacehub_api_token=api_key,
-        temperature=0.2,
-        max_new_tokens=512
+        temperature=0.1,
+        max_new_tokens=256,
+        provider="featherless-ai",
+        stop_sequences=["Question:", "\n\n"]
     )
 
     rag_chain = RetrievalQA.from_chain_type(
