@@ -76,14 +76,16 @@ def get_current_user(
         )
     except PyJWKClientError as e:
         # Log JWKS fetch failure specifically
-        print(f"JWKS ERROR: {str(e)}")
+        print(f"JWKS ERROR: Failed to fetch signing keys from {jwks_url}. Error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Could not verify token: Authentication service unreachable."
+            detail=f"Authentication service unreachable. Ensure CLERK_JWKS_URL ({jwks_url}) is correct and accessible."
         )
     except Exception as e:
         # Log unexpected errors
         print(f"AUTH ERROR: Unexpected failure - {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Authentication failed: {str(e)}"

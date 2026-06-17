@@ -7,21 +7,28 @@ from app.core.config import settings
 app = FastAPI(title="Safe-sphere Backend")
 
 # Configure CORS
+origins = [str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
-    allow_credentials=True,
+    allow_origins=origins if origins else ["*"],
+    allow_origin_regex=r"https://safe-sphere-.*\.vercel\.app",
+    allow_credentials=True if origins else False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Exception Handlers
-# @app.exception_handler(Exception)
-# async def internal_error_handler(request: Request, exc: Exception):
-#     return JSONResponse(
-#         status_code=500,
-#         content={"error": "Internal Server Error", "message": str(exc)}
-#     )
+@app.exception_handler(Exception)
+async def internal_error_handler(request: Request, exc: Exception):
+    print(f"GLOBAL ERROR: {str(exc)}")
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal Server Error", "message": str(exc)}
+    )
 
 # Include Routers
 app.include_router(hello_auth.router, tags=["General"])
