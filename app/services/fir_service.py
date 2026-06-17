@@ -11,6 +11,22 @@ from app.models.models import (
 class FIRService:
     def __init__(self, db: Session):
         self.repository = FIRRepository(db)
+        self.db = db
+
+    def get_user_reports(self, user_id: str) -> Dict[str, List[Dict]]:
+        def serialize(items):
+            return [{c.name: getattr(item, c.name) for c in item.__table__.columns} for item in items]
+
+        return {
+            "cyber_crimes": serialize(self.db.query(cyberCrime).filter(cyberCrime.clerk_user_id == user_id).all()),
+            "theft_efirs": serialize(self.db.query(theftEfir).filter(theftEfir.clerk_user_id == user_id).all()),
+            "lost_items": serialize(self.db.query(LostItem).filter(LostItem.clerk_user_id == user_id).all()),
+            "missing_persons": serialize(self.db.query(missingPerson).filter(missingPerson.clerk_user_id == user_id).all()),
+            "domestic_forms": serialize(self.db.query(domesticForm).filter(domesticForm.clerk_user_id == user_id).all()),
+            "rape_cases": serialize(self.db.query(rapecase).filter(rapecase.clerk_user_id == user_id).all()),
+            "mv_thefts": serialize(self.db.query(mvTheft).filter(mvTheft.clerk_user_id == user_id).all()),
+            "sos_reports": serialize(self.db.query(SOSReport).filter(SOSReport.clerk_user_id == user_id).all())
+        }
 
     def register_lost_item(self, data: LostItemCreate) -> LostItem:
         return self.repository.save_fir(LostItem(**data.model_dump()))

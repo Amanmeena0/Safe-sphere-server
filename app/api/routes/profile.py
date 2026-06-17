@@ -71,26 +71,8 @@ async def get_my_firs(
     """
     Fetch all types of reports submitted by the authenticated citizen.
     """
-    try:
-        user_id = current_user.clerk_user_id
-        def serialize(items):
-            return [{c.name: getattr(item, c.name) for c in item.__table__.columns} for item in items]
-
-        data = {
-            "cyber_crimes": serialize(db.query(cyberCrime).filter(cyberCrime.clerk_user_id == user_id).all()),
-            "theft_efirs": serialize(db.query(theftEfir).filter(theftEfir.clerk_user_id == user_id).all()),
-            "lost_items": serialize(db.query(LostItem).filter(LostItem.clerk_user_id == user_id).all()),
-            "missing_persons": serialize(db.query(missingPerson).filter(missingPerson.clerk_user_id == user_id).all()),
-            "domestic_forms": serialize(db.query(domesticForm).filter(domesticForm.clerk_user_id == user_id).all()),
-            "rape_cases": serialize(db.query(rapecase).filter(rapecase.clerk_user_id == user_id).all()),
-            "mv_thefts": serialize(db.query(mvTheft).filter(mvTheft.clerk_user_id == user_id).all()),
-            "sos_reports": serialize(db.query(SOSReport).filter(SOSReport.clerk_user_id == user_id).all())
-        }
-
-        return data
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch reports: {str(e)}")
+    service = FIRService(db)
+    return service.get_user_reports(current_user.clerk_user_id)
 
 @router.get("/sos")
 async def get_my_sos_reports(
@@ -100,9 +82,6 @@ async def get_my_sos_reports(
     """
     Fetch all SOS reports submitted by the authenticated user.
     """
-    try:
-        user_id = current_user.clerk_user_id
-        reports = db.query(SOSReport).filter(SOSReport.clerk_user_id == user_id).all()
-        return [{c.name: getattr(report, c.name) for c in report.__table__.columns} for report in reports]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch SOS reports: {str(e)}")
+    from app.services.sos_service import SOSService
+    service = SOSService()
+    return service.get_user_sos_reports(db, current_user.clerk_user_id)
