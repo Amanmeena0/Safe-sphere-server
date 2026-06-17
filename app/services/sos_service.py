@@ -1,8 +1,8 @@
 import os
 import json
+import math
 import requests
 from fastapi import HTTPException
-from geopy.distance import geodesic
 from typing import List, Dict
 from sqlalchemy.orm import Session
 from app.models.models import SOSReport
@@ -21,6 +21,22 @@ class SOSService:
         # Remote URLs from environment (optional)
         self.POLICE_STATIONS_URL = os.getenv("POLICE_STATIONS_URL")
         self.CRIME_CLUSTERS_URL = os.getenv("CRIME_CLUSTERS_URL")
+
+    def _haversine(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """
+        Calculate the great circle distance between two points 
+        on the earth (specified in decimal degrees)
+        """
+        # Convert decimal degrees to radians 
+        lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+
+        # Haversine formula 
+        dlon = lon2 - lon1 
+        dlat = lat2 - lat1 
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.asin(math.sqrt(a)) 
+        r = 6371 # Radius of earth in kilometers
+        return c * r
 
     def _fetch_data(self, url: str, local_filename: str):
         """Helper to fetch data from URL or local file."""
@@ -64,15 +80,15 @@ class SOSService:
 
         for feature in police_data["features"]:
             coords = feature["geometry"]["coordinates"]
-            # GeoJSON is [lon, lat], geopy needs [lat, lon]
-            station_location = (coords[1], coords[0])
-            distance_km = geodesic(user_location, station_location).kilometers
+            # GeoJSON is [lon, lat], _haversine needs [lat1, lon1, lat2, lon2]
+            station_lat, station_lon = coords[1], coords[0]
+            distance_km = self._haversine(lat, lon, station_lat, station_lon)
 
             distances.append({
                 "name": feature["properties"]["ps"],
                 "state": feature["properties"]["state"],
                 "district": feature["properties"]["district"],
-                "coordinates": station_location,
+                "coordinates": (station_lat, station_lon),
                 "distance_km": round(distance_km, 2)
             })
 
