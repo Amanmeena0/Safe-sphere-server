@@ -54,7 +54,7 @@ class cyberCrime(Base):
     age = Column(Integer)
     gender = Column(String(10))
     relation = Column(String(50))
-    policeStation = Column(String(100), nullable=False)
+    police_station = Column(String(100), nullable=False)
 
 class rapecase(Base):
     __tablename__ = 'rape_cases'
@@ -92,6 +92,7 @@ class domesticForm(Base):
     employer_address = Column(String(255), nullable=False)
     documentation = Column(Text, default='')
     duration_of_stay = Column(String(100), nullable=False)
+    police_station = Column(String(100), nullable=False)
 
 
 class theftEfir(Base):
@@ -151,7 +152,7 @@ class missingPerson(Base):
     alternate_contact = Column(String(15), nullable=False)
     emailaddress = Column(String(255), nullable=False)
     anyotherdetails = Column(Text, nullable=False)
-    policestation = Column(String(100), nullable=False)
+    police_station = Column(String(100), nullable=False)
     district = Column(String(100), nullable=False)
     upload_document = Column(Text, default='')
 
