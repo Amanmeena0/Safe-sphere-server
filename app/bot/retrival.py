@@ -1,4 +1,4 @@
-from langchain_huggingface import HuggingFaceEndpoint, HuggingFaceEndpointEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings, ChatHuggingFace, HuggingFaceEndpoint
 from langchain_community.vectorstores import Chroma
 from langchain_classic.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
@@ -59,14 +59,19 @@ Question: {question}
 Answer:"""
     )
 
-    # Use a standard model compatible with serverless inference
-    model = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+    # Use meta-llama/Meta-Llama-3-8B-Instruct — confirmed to support HuggingFace's
+    # chat completions router (router.huggingface.co/v1/chat/completions) which is
+    # required by ChatHuggingFace. nvidia/Mistral-NeMo-12B-Instruct does NOT work here.
+    llm = HuggingFaceEndpoint(
+        repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
+        task="conversational",
         huggingfacehub_api_token=api_key,
         temperature=0.1,
         max_new_tokens=512,
-        stop_sequences=["Question:"]
     )
+    model = ChatHuggingFace(llm=llm)
+
+
 
     rag_chain = RetrievalQA.from_chain_type(
         llm=model,
