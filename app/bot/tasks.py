@@ -1,17 +1,8 @@
 from app.utils.celery_app import celery
-from .retrival import build_rag_chain
+from .retrival import get_rag_chain
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Cache the chain globally in the worker
-_rag_chain = None
-
-def get_rag_chain():
-    global _rag_chain
-    if _rag_chain is None:
-        _rag_chain = build_rag_chain()
-    return _rag_chain
 
 @celery.task(name="app_bot.generate_answer_task")
 def generate_answer_task(query):

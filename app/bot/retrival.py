@@ -61,12 +61,11 @@ Answer:"""
 
     # Use a standard model compatible with serverless inference
     model = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-v0.1",
+        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
         huggingfacehub_api_token=api_key,
         temperature=0.1,
-        max_new_tokens=256,
-        provider="featherless-ai",
-        stop_sequences=["Question:", "\n\n"]
+        max_new_tokens=512,
+        stop_sequences=["Question:"]
     )
 
     rag_chain = RetrievalQA.from_chain_type(
@@ -79,3 +78,12 @@ Answer:"""
 
     logging.info("✅ RAG chain initialized successfully.")
     return rag_chain
+
+# Cache the chain globally
+_rag_chain = None
+
+def get_rag_chain():
+    global _rag_chain
+    if _rag_chain is None:
+        _rag_chain = build_rag_chain()
+    return _rag_chain
