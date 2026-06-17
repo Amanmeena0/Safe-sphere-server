@@ -91,3 +91,18 @@ async def get_my_firs(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch reports: {str(e)}")
+
+@router.get("/sos")
+async def get_my_sos_reports(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Fetch all SOS reports submitted by the authenticated user.
+    """
+    try:
+        user_id = current_user.clerk_user_id
+        reports = db.query(SOSReport).filter(SOSReport.clerk_user_id == user_id).all()
+        return [{c.name: getattr(report, c.name) for c in report.__table__.columns} for report in reports]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch SOS reports: {str(e)}")
