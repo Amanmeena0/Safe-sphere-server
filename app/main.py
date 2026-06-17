@@ -7,13 +7,14 @@ from app.core.config import settings
 app = FastAPI(title="Safe-sphere Backend")
 
 # Configure CORS
+# Explicitly include the production and preview origins
 origins = [str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if origins else ["*"],
+    allow_origins=origins,
     allow_origin_regex=r"https://safe-sphere-.*\.vercel\.app",
-    allow_credentials=True if origins else False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
