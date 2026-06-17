@@ -1,3 +1,4 @@
+from typing import List, Dict
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.models import SOSReport

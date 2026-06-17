@@ -1,3 +1,4 @@
+from typing import Dict, List
 from sqlalchemy.orm import Session
 from app.repositories.fir_repository import FIRRepository
 from app.schemas.fir import (
@@ -5,7 +6,7 @@ from app.schemas.fir import (
     TheftEfirCreate, MVTheftCreate, MissingPersonCreate
 )
 from app.models.models import (
-    LostItem, cyberCrime, rapecase, domesticForm, theftEfir, mvTheft, missingPerson
+    LostItem, cyberCrime, rapecase, domesticForm, theftEfir, mvTheft, missingPerson, SOSReport
 )
 
 class FIRService:
