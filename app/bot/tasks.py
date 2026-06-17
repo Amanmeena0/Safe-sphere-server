@@ -10,8 +10,8 @@ def generate_answer_task(query):
         logger.info(f"Processing query in task: {query}")
         chain = get_rag_chain()
         result = chain.invoke(query)
-        logger.info(f"Task result: {result}")
+        logger.info(f"Task result successfully generated")
         return result["result"]
     except Exception as e:
         logger.error(f"Error in generate_answer_task: {e}", exc_info=True)
-        return str(e)
+        raise e

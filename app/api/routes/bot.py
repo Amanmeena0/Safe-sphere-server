@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from app.api.dependencies import get_current_user
-from app.bot.retrival import get_rag_chain
 from app.models.models import User
-from celery.result import AsyncResult
-import logging
+from app.bot.retrival import get_rag_chain
 from starlette.concurrency import run_in_threadpool
+import logging
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -19,11 +18,17 @@ async def generate_answer(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        logger.info(f"Generating answer for query: {data.query}")
+        logger.info(f"Generating synchronous answer for query: {data.query}")
         chain = get_rag_chain()
-        # Using run_in_threadpool for synchronous chain.invoke to avoid blocking
+        # Run the synchronous LangChain invoke in a threadpool to keep FastAPI async
         result = await run_in_threadpool(chain.invoke, data.query)
-        return {"result": result["result"]}
+        
+        # We return both 'result' for direct access and 'task_id' as 'sync' 
+        # to allow the frontend to bypass polling if it detects this.
+        return {
+            "result": result["result"],
+            "task_id": "sync_completed" 
+        }
     except Exception as e:
         logger.error(f"Error in generate_answer: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -33,6 +38,17 @@ async def get_status(
     task_id: str,
     current_user: User = Depends(get_current_user)
 ):
+    # Compatibility shim for frontend polling. 
+    # If the frontend still polls 'sync_completed', we return the status immediately.
+    if task_id == "sync_completed":
+        return {
+            "task_id": task_id,
+            "status": "SUCCESS",
+            "result": None # Result was already sent in the /generate response
+        }
+    
+    # Fallback for any actual background tasks if they still exist
+    from celery.result import AsyncResult
     task_result = AsyncResult(task_id)
     return {
         "task_id": task_id,
