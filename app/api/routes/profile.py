@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import json
 from app.api.dependencies import get_db, get_current_user
 from app.services.user_service import UserService
+from app.services.fir_service import FIRService
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from app.models.models import User, cyberCrime, theftEfir, LostItem, missingPerson, domesticForm, rapecase, mvTheft, SOSReport
 from app.utils.redis_client import get_redis
@@ -63,7 +64,7 @@ async def update_my_profile(
     
     return updated_user
 
-@router.get("/my-firs")
+@router.get("/firs")
 async def get_my_firs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
