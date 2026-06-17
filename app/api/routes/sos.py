@@ -18,6 +18,7 @@ async def nearest_police_stations(
     return sos_service.get_nearest_police_stations(lat, lon, top)
 
 @router.get("/crime-data")
+@router.get("/clusters")
 async def get_crime_data():
     return sos_service.get_crime_data()
 

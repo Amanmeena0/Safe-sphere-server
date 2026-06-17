@@ -85,15 +85,18 @@ class SOSService:
         for feature in geojson["features"]:
             props = feature["properties"]
             coords = feature["geometry"]["coordinates"]
+            # Normalize keys to be consistent with SOSReport model and frontend expectations
             record = {
-                "Longitude": coords[0],
-                "Latitude": coords[1],
-                "attack type": props.get("attack type", ""),
+                "longitude": coords[0],
+                "latitude": coords[1],
+                "incident_type": props.get("attack type", props.get("incident_type", "")),
                 "city": props.get("city", ""),
+                "district": props.get("city", ""), # Alias for normalization
                 "day": props.get("day", ""),
                 "location": props.get("location", ""),
                 "month": props.get("month", ""),
                 "state": props.get("state", ""),
+                "state_ut": props.get("state", ""), # Alias for normalization
                 "summary": props.get("summary", ""),
                 "year": props.get("year", "")
             }
