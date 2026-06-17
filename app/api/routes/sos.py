@@ -9,6 +9,7 @@ router = APIRouter()
 sos_service = SOSService()
 
 @router.get("/nearest-police-stations")
+@router.get("/stations")
 async def nearest_police_stations(
     lat: float,
     lon: float,
