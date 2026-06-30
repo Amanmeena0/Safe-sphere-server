@@ -17,6 +17,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 os.environ.setdefault("CLERK_SECRET_KEY", "")
 os.environ.setdefault("CLERK_JWKS_URL", "")
+os.environ.setdefault("HUGGINGFACEHUB_API_TOKEN", "dummy-huggingface-token")
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
