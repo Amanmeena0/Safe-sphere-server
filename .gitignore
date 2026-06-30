@@ -28,4 +28,10 @@ store/
 
 
 
+# Python bytecode / cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
 .DS_store
