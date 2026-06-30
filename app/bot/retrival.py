@@ -8,14 +8,14 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-# Load and validate API Key
+# Load API Key
 load_dotenv()
 api_key = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-if not api_key:
-    raise EnvironmentError("Missing HUGGINGFACEHUB_API_TOKEN in environment.")
 
 # Load Chroma vector store
 def load_vector_store():
+    if not api_key:
+        raise EnvironmentError("Missing HUGGINGFACEHUB_API_TOKEN in environment.")
     embeddings = HuggingFaceEndpointEmbeddings(
         huggingfacehub_api_token=api_key,
         model="sentence-transformers/all-MiniLM-L6-v2"
